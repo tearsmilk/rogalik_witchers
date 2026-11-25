@@ -1,3 +1,11 @@
-node_modules/
-release/
+# Godot
+.godot/
+game/.godot/
+*.import.tmp
+# .NET
+bin/
+obj/
+# Сборка
+build/
+autotest/
 .DS_Store
