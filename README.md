@@ -31,9 +31,25 @@ workflow `Build macOS DMG`, файл лежит в артефакте `Witch-App
 npm ci && npm run dist:mac
 ```
 
-Приложение не подписано сертификатом Apple, поэтому при первом запуске: правый клик по приложению →
-«Открыть» → «Открыть». Если macOS пишет, что приложение «повреждено»:
+Приложение не подписано сертификатом Apple. После копирования в «Программы» один раз выполнить в Терминале:
 
 ```bash
 xattr -cr "/Applications/Witch Apprentice.app"
 ```
+
+```bash
+codesign --force --deep --sign - "/Applications/Witch Apprentice.app"
+```
+
+Первая команда снимает карантин, вторая ставит локальную ad-hoc подпись (без неё на Mac с Apple Silicon
+приложение считается «повреждённым»). Дальше — правый клик → «Открыть».
+
+### Сборка DMG в Linux (без Mac)
+
+```bash
+npx electron-builder --mac dir --arm64 --x64 --publish never
+```
+
+Затем каждый `.app` упаковывается в DMG-образ (ISO 9660 + Rock Ridge, macOS его монтирует):
+`xorriso -as mkisofs -V "Witch Apprentice" -R -o Witch-Apprentice-mac-arm64.dmg <папка с .app и ссылкой на /Applications>`.
+Подписи такая сборка не получает — см. команды выше.
