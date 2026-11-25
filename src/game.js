@@ -224,7 +224,7 @@ function killEnemy(e) {
     for (let i = 0; i < 60; i++) {
       G.particles.push({ x: e.x, y: e.y, vx: rand(-300, 300), vy: rand(-300, 300), t: rand(0.6, 1.4), c: pick(['#f7dc6f', '#ff7043', '#d7bde2']), s: rand(3, 6) });
     }
-    setTimeout(() => { if (state === 'play') winGame(); }, 1200);
+    G.winAt = G.t + 1.2;
   }
 }
 
@@ -627,6 +627,7 @@ function update(dt) {
   G.rings = G.rings.filter(r => r.t > 0);
   G.shake = Math.max(0, G.shake - dt);
 
+  if (G.winAt && G.t >= G.winAt) { winGame(); return; }
   if (state === 'play') openNextModal();
 }
 
