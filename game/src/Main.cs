@@ -18,9 +18,9 @@ public partial class Main : Node2D
     Camera2D _camera;
     Sfx _sfx;
     Ui _ui;
-    PointLight2D _light;
+    public Vector2 LightPos;
+    public Color LightColor = new("#d9c8ff");
     Vector2 _titleCam;
-    readonly Dictionary<(int, int), Painter.TreeGeom> _trees = new();
 
     const string SavePath = "user://save.cfg";
     const float TreeCell = 260;
@@ -35,21 +35,11 @@ public partial class Main : Node2D
         AddChild(_camera);
         _camera.MakeCurrent();
 
-        // Ночь: весь мир затемнён, вокруг ведьмы — свет.
-        AddChild(new CanvasModulate { Color = new Color(0.19f, 0.17f, 0.27f) });
-        _light = new PointLight2D
-        {
-            Texture = RadialTexture(512, new Color(1, 1, 1, 1), new Color(1, 1, 1, 0), 0.0f),
-            TextureScale = 1.45f,
-            Energy = 1.5f,
-            Color = new Color("#d9c8ff"),
-            BlendMode = Light2D.BlendModeEnum.Add,
-        };
-        AddChild(_light);
-
         // Слой свечения поверх мира: не затемняется, смешивается сложением.
         var fxLayer = new CanvasLayer { Layer = 1, FollowViewportEnabled = true };
         AddChild(fxLayer);
+        // Ночь: дешёвая «маска темноты» с прозрачным кругом вокруг ведьмы (вместо 2D-света).
+        fxLayer.AddChild(new Darkness(this));
         fxLayer.AddChild(new Glow(this) { Material = new CanvasItemMaterial { BlendMode = CanvasItemMaterial.BlendModeEnum.Add } });
         fxLayer.AddChild(new Overlay(this));
 
@@ -253,7 +243,7 @@ public partial class Main : Node2D
             case GameState.Title:
                 _titleCam += new Vector2(14, 5) * dt;
                 _camera.Position = _titleCam;
-                _light.Position = _titleCam + new Vector2(260, 40);
+                LightPos = _titleCam + new Vector2(260, 40);
                 break;
             case GameState.Play:
                 if (Input.IsActionJustPressed("pause")) { SetPaused(true); break; }
@@ -278,10 +268,10 @@ public partial class Main : Node2D
             var shake = G.Shake > 0 ? new Vector2((float)GD.RandRange(-6, 6), (float)GD.RandRange(-6, 6)) * G.Shake * 3 : Vector2.Zero;
             _camera.Position = G.P.Pos + new Vector2(0, -30);
             _camera.Offset = shake;
-            _light.Position = G.P.Pos + new Vector2(0, -40);
-            _light.Color = (G.P.Look.Aura ?? new Color("#d9c8ff")).Lerp(Colors.White, 0.45f);
+            LightPos = G.P.Pos + new Vector2(0, -40);
+            LightColor = G.P.Look.Aura ?? new Color("#d9c8ff");
         }
-        QueueRedraw();
+        SyncWorld();
         _ui.Tick(dt);
     }
 
@@ -317,7 +307,9 @@ public partial class Main : Node2D
         _ui.ShowEnd(true);
     }
 
-    // ---------- Отрисовка мира (затемняется ночью, освещается светом ведьмы) ----------
+    // ---------- Мир: узлы с кэшированной отрисовкой ----------
+    // Земля и деревья рисуются один раз (Godot кэширует команды отрисовки узла),
+    // каждый кадр перерисовываются только враги и ведьма. Глубину сортирует движок (Y-sort).
     public static float Hash(int x, int y, int s = 0)
     {
         unchecked
@@ -332,118 +324,256 @@ public partial class Main : Node2D
 
     public Vector2 CameraCenter => _camera.Position;
 
-    static readonly Color[] Leaves = { new("#8a4a26"), new("#6e3a22"), new("#a65f2c"), new("#5b2f1f"), new("#7d2e3a") };
+    Node2D _groundRoot, _actors;
+    readonly Dictionary<(int, int), GroundChunk> _chunks = new();
+    readonly Dictionary<(int, int), TreeView> _treeViews = new();
+    readonly List<EnemyView> _enemyViews = new();
+    WitchView _witchView;
 
-    public override void _Draw()
+    void EnsureWorldNodes()
     {
+        if (_groundRoot != null) return;
+        _groundRoot = new Node2D { ZIndex = -100 };
+        AddChild(_groundRoot);
+        _actors = new Node2D { YSortEnabled = true };
+        AddChild(_actors);
+        _witchView = new WitchView(this) { Visible = false };
+        _actors.AddChild(_witchView);
+    }
+
+    void SyncWorld()
+    {
+        EnsureWorldNodes();
         var view = GetViewportRect().Size;
         var center = _camera.Position;
-        var tl = center - view / 2 - new Vector2(40, 40);
-        var size = view + new Vector2(80, 80);
-        DrawRect(new Rect2(tl, size), new Color("#4a4556"));
+        var tl = center - view / 2;
 
-        const float cell = 96;
-        int x0 = (int)Mathf.Floor(tl.X / cell), y0 = (int)Mathf.Floor(tl.Y / cell);
-        int x1 = (int)Mathf.Floor((tl.X + size.X) / cell), y1 = (int)Mathf.Floor((tl.Y + size.Y) / cell);
+        // земля: куски 768×768 вокруг камеры
+        const float CS = GroundChunk.Size;
+        int x0 = (int)Mathf.Floor((tl.X - 100) / CS), y0 = (int)Mathf.Floor((tl.Y - 100) / CS);
+        int x1 = (int)Mathf.Floor((tl.X + view.X + 100) / CS), y1 = (int)Mathf.Floor((tl.Y + view.Y + 100) / CS);
+        var needed = new HashSet<(int, int)>();
         for (int cx = x0; cx <= x1; cx++)
         for (int cy = y0; cy <= y1; cy++)
         {
-            var o = new Vector2(cx * cell, cy * cell);
-            if (Hash(cx, cy, 1) < 0.35f)
-                Painter.Ellipse(this, o + new Vector2(Hash(cx, cy, 11) * cell, Hash(cx, cy, 12) * cell), 60 + Hash(cx, cy, 13) * 50, 26 + Hash(cx, cy, 14) * 20, new Color("#38333f"));
-            if (Hash(cx, cy, 2) < 0.09f)
+            needed.Add((cx, cy));
+            if (!_chunks.ContainsKey((cx, cy)))
             {
-                int n = 2 + (int)(Hash(cx, cy, 21) * 4);
-                for (int k = 0; k < n; k++)
+                var ch = new GroundChunk(cx, cy) { Position = new Vector2(cx * CS, cy * CS) };
+                _groundRoot.AddChild(ch);
+                _chunks[(cx, cy)] = ch;
+            }
+        }
+        foreach (var k in _chunks.Keys.Where(k => !needed.Contains(k)).ToList()) { _chunks[k].QueueFree(); _chunks.Remove(k); }
+
+        // деревья
+        int tx0 = (int)Mathf.Floor((tl.X - 300) / TreeCell), ty0 = (int)Mathf.Floor((tl.Y - 200) / TreeCell);
+        int tx1 = (int)Mathf.Floor((tl.X + view.X + 300) / TreeCell), ty1 = (int)Mathf.Floor((tl.Y + view.Y + 450) / TreeCell);
+        var neededTrees = new HashSet<(int, int)>();
+        for (int cy = ty0; cy <= ty1; cy++)
+        for (int cx = tx0; cx <= tx1; cx++)
+        {
+            if (Hash(cx, cy, 300) > 0.55f) continue;
+            neededTrees.Add((cx, cy));
+            if (_treeViews.ContainsKey((cx, cy))) continue;
+            var basePos = new Vector2(cx * TreeCell + Hash(cx, cy, 301) * TreeCell, cy * TreeCell + Hash(cx, cy, 302) * TreeCell);
+            var geom = Painter.BuildTree(Vector2.Zero, new Random((int)(Hash(cx, cy, 303) * int.MaxValue)));
+            var tv = new TreeView(geom) { Position = basePos };
+            _actors.AddChild(tv);
+            _treeViews[(cx, cy)] = tv;
+        }
+        foreach (var k in _treeViews.Keys.Where(k => !neededTrees.Contains(k)).ToList()) { _treeViews[k].QueueFree(); _treeViews.Remove(k); }
+
+        // прозрачность дерева, если ведьма за ним
+        if (G != null)
+            foreach (var tv in _treeViews.Values)
+            {
+                var p = G.P.Pos;
+                bool behind = tv.Position.Y > p.Y && tv.Position.Y - p.Y < tv.Geom.Height && Mathf.Abs(tv.Position.X - p.X) < 70;
+                tv.Modulate = new Color(1, 1, 1, behind ? 0.4f : 1);
+            }
+
+        // враги: пул узлов, перерисовка каждый кадр
+        int used = 0;
+        if (G != null)
+        {
+            foreach (var e in G.Enemies)
+            {
+                if (Mathf.Abs(e.Pos.X - center.X) > view.X / 2 + 160 || Mathf.Abs(e.Pos.Y - center.Y) > view.Y / 2 + 260) continue;
+                if (used == _enemyViews.Count)
                 {
-                    var c = o + new Vector2(Hash(cx, cy, 30 + k) * cell, Hash(cx, cy, 40 + k) * cell);
-                    float w = 16 + Hash(cx, cy, 50 + k) * 12, h = w * 0.55f;
+                    var ev = new EnemyView(this);
+                    _actors.AddChild(ev);
+                    _enemyViews.Add(ev);
+                }
+                var v = _enemyViews[used++];
+                v.Enemy = e;
+                v.Position = e.Pos;
+                v.Visible = true;
+                v.QueueRedraw();
+            }
+        }
+        for (int i = used; i < _enemyViews.Count; i++) if (_enemyViews[i].Visible) { _enemyViews[i].Visible = false; _enemyViews[i].Enemy = null; }
+
+        _witchView.Visible = G != null;
+        if (G != null)
+        {
+            _witchView.Position = G.P.Pos;
+            _witchView.QueueRedraw();
+        }
+    }
+}
+
+/// <summary>Кусок земли: плиты, листья, трава. Рисуется один раз.</summary>
+public partial class GroundChunk : Node2D
+{
+    public const float Size = 768;
+    const float Cell = 96;
+    readonly int _cx, _cy;
+    static readonly Color[] Leaves = { new("#8a4a26"), new("#6e3a22"), new("#a65f2c"), new("#5b2f1f"), new("#7d2e3a") };
+
+    public GroundChunk(int cx, int cy) { _cx = cx; _cy = cy; }
+
+    public override void _Draw()
+    {
+        DrawRect(new Rect2(0, 0, Size + 1, Size + 1), new Color("#4a4556"));
+        int n = (int)(Size / Cell);
+        for (int ix = 0; ix < n; ix++)
+        for (int iy = 0; iy < n; iy++)
+        {
+            int cx = _cx * n + ix, cy = _cy * n + iy;
+            var o = new Vector2(ix * Cell, iy * Cell);
+            float H(int s) => Main.Hash(cx, cy, s);
+            if (H(1) < 0.35f)
+                Painter.Ellipse(this, o + new Vector2(H(11) * Cell, H(12) * Cell), 60 + H(13) * 50, 26 + H(14) * 20, new Color("#38333f"));
+            if (H(2) < 0.09f)
+            {
+                int k2 = 2 + (int)(H(21) * 4);
+                for (int k = 0; k < k2; k++)
+                {
+                    var c = o + new Vector2(H(30 + k) * Cell, H(40 + k) * Cell);
+                    float w = 16 + H(50 + k) * 12, h = w * 0.55f;
                     var pts = new[] { c + new Vector2(-w, 0), c + new Vector2(-w * 0.3f, -h), c + new Vector2(w * 0.8f, -h * 0.8f), c + new Vector2(w, h * 0.2f), c + new Vector2(w * 0.2f, h) };
                     DrawColoredPolygon(pts.Select(p => p + new Vector2(2, 3)).ToArray(), new Color("#26222c"));
                     DrawColoredPolygon(pts, new Color("#57525e"));
                     DrawColoredPolygon(new[] { pts[0], pts[1], pts[2], c }, new Color("#66606c"));
                 }
             }
-            if (Hash(cx, cy, 3) < 0.5f)
+            if (H(3) < 0.5f)
             {
-                int n = 3 + (int)(Hash(cx, cy, 60) * 10);
-                for (int k = 0; k < n; k++)
+                int k2 = 3 + (int)(H(60) * 10);
+                for (int k = 0; k < k2; k++)
                 {
-                    var c = o + new Vector2(Hash(cx, cy, 70 + k) * cell, Hash(cx, cy, 90 + k) * cell);
-                    float r = 2.5f + Hash(cx, cy, 110 + k) * 2.5f;
-                    DrawSetTransform(c, Hash(cx, cy, 130 + k) * Mathf.Tau, Vector2.One);
-                    DrawColoredPolygon(Painter.EllipsePts(r, r * 0.5f, 8), Leaves[(int)(Hash(cx, cy, 150 + k) * Leaves.Length)]);
-                    DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+                    var c = o + new Vector2(H(70 + k) * Cell, H(90 + k) * Cell);
+                    float r = 2.5f + H(110 + k) * 2.5f;
+                    float a = H(130 + k) * Mathf.Tau;
+                    var pts = Painter.EllipsePts(r, r * 0.5f, 8).Select(p => c + p.Rotated(a)).ToArray();
+                    DrawColoredPolygon(pts, Leaves[(int)(H(150 + k) * Leaves.Length)]);
                 }
             }
-            if (Hash(cx, cy, 4) < 0.4f)
+            if (H(4) < 0.4f)
             {
-                var c = o + new Vector2(Hash(cx, cy, 170) * cell, Hash(cx, cy, 171) * cell);
+                var c = o + new Vector2(H(170) * Cell, H(171) * Cell);
                 var col = new Color("#3d4a35");
-                for (int k = -2; k <= 2; k++) DrawLine(c + new Vector2(k * 2, 0), c + new Vector2(k * 3.5f, -7 - Mathf.Abs(k) * -1.5f), col, 1.5f);
+                for (int k = -2; k <= 2; k++) DrawLine(c + new Vector2(k * 2, 0), c + new Vector2(k * 3.5f, -7 + Mathf.Abs(k) * 1.5f), col, 1.5f);
             }
         }
+    }
+}
 
-        // Деревья (тени — отдельно и раньше всех, чтобы ложились на землю)
-        var trees = VisibleTrees(tl, size).ToList();
-        foreach (var t in trees) Painter.TreeShadow(this, t);
+/// <summary>Мёртвое дерево: ствол рисуется один раз; тень — отдельным узлом под всеми.</summary>
+public partial class TreeView : Node2D
+{
+    public readonly Painter.TreeGeom Geom;
+    static readonly Color[] Leaves = { new("#8a4a26"), new("#6e3a22"), new("#a65f2c"), new("#5b2f1f"), new("#7d2e3a") };
 
-        var items = new List<(float y, Action draw)>();
-        foreach (var t in trees)
+    public TreeView(Painter.TreeGeom geom) { Geom = geom; }
+
+    public override void _Ready() => AddChild(new TreeShadowView(Geom) { ZIndex = -50 });
+
+    public override void _Draw()
+    {
+        for (int k = 0; k < 14; k++)
         {
-            var tree = t;
-            items.Add((tree.Base.Y, () =>
-            {
-                float alpha = 1;
-                if (G != null)
-                {
-                    var p = G.P.Pos;
-                    if (tree.Base.Y > p.Y && tree.Base.Y - p.Y < tree.Height && Mathf.Abs(tree.Base.X - p.X) < 70) alpha = 0.4f;
-                }
-                // ворох листьев у корней
-                for (int k = 0; k < 14; k++)
-                {
-                    float a = k * 2.4f, r = 10 + (k * 7) % 30;
-                    Painter.Ellipse(this, tree.Base + new Vector2(Mathf.Cos(a) * r * 1.4f, Mathf.Sin(a) * r * 0.45f + 2), 4, 2, Leaves[k % Leaves.Length]);
-                }
-                Painter.Tree(this, tree, alpha);
-            }));
+            float a = k * 2.4f, r = 10 + (k * 7) % 30;
+            Painter.Ellipse(this, new Vector2(Mathf.Cos(a) * r * 1.4f, Mathf.Sin(a) * r * 0.45f + 2), 4, 2, Leaves[k % Leaves.Length]);
         }
+        Painter.Tree(this, Geom, 1);
+    }
+}
 
-        if (G != null)
-        {
-            foreach (var e in G.Enemies)
-            {
-                var en = e;
-                if (Mathf.Abs(en.Pos.X - center.X) > view.X / 2 + 160 || Mathf.Abs(en.Pos.Y - center.Y) > view.Y / 2 + 220) continue;
-                items.Add((en.Pos.Y, () => Painter.Enemy(this, en, G.T, G.P.Pos.X < en.Pos.X)));
-            }
-            items.Add((G.P.Pos.Y, () =>
-            {
-                bool blink = G.P.IFrames > 0 && (int)(G.T * 20) % 2 == 0;
-                Painter.Witch(this, G.P.Look, G.P.Pos, Data.WitchScale, G.P.Face < 0, G.P.Anim, blink);
-            }));
-        }
-        foreach (var it in items.OrderBy(i => i.y)) it.draw();
+public partial class TreeShadowView : Node2D
+{
+    readonly Painter.TreeGeom _geom;
+    public TreeShadowView(Painter.TreeGeom geom) { _geom = geom; }
+    public override void _Draw() => Painter.TreeShadow(this, _geom);
+}
+
+public partial class EnemyView : Node2D
+{
+    readonly Main _main;
+    public Enemy Enemy;
+    public EnemyView(Main main) { _main = main; }
+    public override void _Draw()
+    {
+        if (Enemy == null || _main.G == null) return;
+        Painter.Enemy(this, Enemy, _main.G.T, _main.G.P.Pos.X < Enemy.Pos.X, Vector2.Zero);
+    }
+}
+
+public partial class WitchView : Node2D
+{
+    readonly Main _main;
+    public WitchView(Main main) { _main = main; }
+    public override void _Draw()
+    {
+        var g = _main.G;
+        if (g == null) return;
+        bool blink = g.P.IFrames > 0 && (int)(g.T * 20) % 2 == 0;
+        Painter.Witch(this, g.P.Look, Vector2.Zero, Data.WitchScale, g.P.Face < 0, g.P.Anim, blink);
+    }
+}
+
+/// <summary>Ночь: тёмный слой с мягким светлым кругом вокруг ведьмы и лёгким цветным оттенком ауры.</summary>
+public partial class Darkness : Node2D
+{
+    readonly Main _main;
+    static GradientTexture2D _hole;
+    static readonly Color Night = new(0.03f, 0.02f, 0.07f);
+    public Darkness(Main main) { _main = main; }
+
+    public override void _Ready()
+    {
+        if (_hole != null) return;
+        var grad = new Gradient();
+        grad.SetColor(0, new Color(Night, 0.30f));
+        grad.SetColor(1, new Color(Night, 0.86f));
+        grad.SetOffset(0, 0.18f);
+        grad.SetOffset(1, 1.0f);
+        _hole = new GradientTexture2D { Gradient = grad, Width = 256, Height = 256, Fill = GradientTexture2D.FillEnum.Radial,
+            FillFrom = new Vector2(0.5f, 0.5f), FillTo = new Vector2(1f, 0.5f) };
     }
 
-    IEnumerable<Painter.TreeGeom> VisibleTrees(Vector2 tl, Vector2 size)
+    public override void _Process(double delta) => QueueRedraw();
+
+    public override void _Draw()
     {
-        int x0 = (int)Mathf.Floor(tl.X / TreeCell) - 1, y0 = (int)Mathf.Floor(tl.Y / TreeCell) - 1;
-        int x1 = (int)Mathf.Floor((tl.X + size.X) / TreeCell) + 1, y1 = (int)Mathf.Floor((tl.Y + size.Y) / TreeCell) + 2;
-        if (_trees.Count > 3000) _trees.Clear();
-        for (int cy = y0; cy <= y1; cy++)
-        for (int cx = x0; cx <= x1; cx++)
-        {
-            if (Hash(cx, cy, 300) > 0.55f) continue;
-            if (!_trees.TryGetValue((cx, cy), out var t))
-            {
-                var basePos = new Vector2(cx * TreeCell + Hash(cx, cy, 301) * TreeCell, cy * TreeCell + Hash(cx, cy, 302) * TreeCell);
-                t = Painter.BuildTree(basePos, new Random((int)(Hash(cx, cy, 303) * int.MaxValue)));
-                _trees[(cx, cy)] = t;
-            }
-            yield return t;
-        }
+        var view = GetViewportRect().Size;
+        var cam = _main.CameraCenter;
+        var tl = cam - view / 2 - new Vector2(50, 50);
+        var br = tl + view + new Vector2(100, 100);
+        float R = 470;
+        var c = _main.LightPos;
+        var hole = new Rect2(c - new Vector2(R, R), new Vector2(R * 2, R * 2));
+        var dark = new Color(Night, 0.86f);
+        // всё вне круга — тёмное
+        if (hole.Position.Y > tl.Y) DrawRect(new Rect2(tl.X, tl.Y, br.X - tl.X, hole.Position.Y - tl.Y), dark);
+        if (hole.End.Y < br.Y) DrawRect(new Rect2(tl.X, hole.End.Y, br.X - tl.X, br.Y - hole.End.Y), dark);
+        if (hole.Position.X > tl.X) DrawRect(new Rect2(tl.X, hole.Position.Y, hole.Position.X - tl.X, hole.Size.Y), dark);
+        if (hole.End.X < br.X) DrawRect(new Rect2(hole.End.X, hole.Position.Y, br.X - hole.End.X, hole.Size.Y), dark);
+        DrawTextureRect(_hole, hole, false);
+        // общий лунный оттенок
+        DrawRect(new Rect2(tl, br - tl), new Color(0.25f, 0.18f, 0.45f, 0.18f));
     }
 }
 

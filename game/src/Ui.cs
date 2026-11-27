@@ -140,10 +140,11 @@ public partial class Ui : CanvasLayer
         root.AddChild(bg);
         bg.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
 
-        var portrait = new TextureRect { Texture = GD.Load<Texture2D>("res://assets/witch_portrait.svg"), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+        var portrait = new TextureRect { Texture = GD.Load<Texture2D>("res://assets/witch_portrait.png"), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, MouseFilter = Control.MouseFilterEnum.Ignore };
         root.AddChild(portrait);
-        portrait.AnchorLeft = 0.48f; portrait.AnchorRight = 1f; portrait.AnchorTop = 0.02f; portrait.AnchorBottom = 1f;
+        portrait.AnchorLeft = 0.5f; portrait.AnchorRight = 0.98f; portrait.AnchorTop = 0.03f; portrait.AnchorBottom = 0.99f;
+        portrait.TextureFilter = Control.TextureFilterEnum.LinearWithMipmaps;
 
         var left = new MarginContainer();
         root.AddChild(left);

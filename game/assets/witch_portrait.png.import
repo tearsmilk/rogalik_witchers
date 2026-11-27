@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dnad34i0ef4eg"
-path="res://.godot/imported/witch_portrait.svg-3e7197bdad67ecf7a9b994692f25cf89.ctex"
+uid="uid://c6feg6oor6861"
+path="res://.godot/imported/witch_portrait.png-9b01b2f1bc5b9ff10ff972576af4a07b.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/witch_portrait.svg"
-dest_files=["res://.godot/imported/witch_portrait.svg-3e7197bdad67ecf7a9b994692f25cf89.ctex"]
+source_file="res://assets/witch_portrait.png"
+dest_files=["res://.godot/imported/witch_portrait.png-9b01b2f1bc5b9ff10ff972576af4a07b.ctex"]
 
 [params]
 
@@ -38,6 +38,3 @@ process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
 detect_3d/compress_to=1
-svg/scale=1.0
-editor/scale_with_editor_scale=false
-editor/convert_colors_with_editor_theme=false

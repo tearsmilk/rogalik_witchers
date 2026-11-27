@@ -134,10 +134,9 @@ public static class Painter
 
     // ---------------- Враги ----------------
 
-    public static void Enemy(CanvasItem ci, Enemy e, float t, bool faceLeft)
+    public static void Enemy(CanvasItem ci, Enemy e, float t, bool faceLeft, Vector2 feet)
     {
         float s = e.Def.Scale;
-        var feet = e.Pos;
         bool flash = e.HitFlash > 0;
         Color F(Color c) => flash ? c.Lerp(Colors.White, 0.75f) : e.Slow > 0 ? c.Lerp(new Color("#9fd3ff"), 0.4f) : c;
 
