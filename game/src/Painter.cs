@@ -346,6 +346,20 @@ public static class Painter
         return new Vector2(p.X + up * ShadowDir.X, basePos.Y + up * ShadowDir.Y);
     }
 
+    public static Rect2 TreeBounds(TreeGeom g)
+    {
+        var r = new Rect2(g.Base, Vector2.Zero);
+        foreach (var (a, b, w) in g.Segs) { r = r.Expand(a).Expand(b); }
+        return r.Grow(16);
+    }
+
+    public static Rect2 TreeShadowBounds(TreeGeom g)
+    {
+        var r = new Rect2(g.Base, Vector2.Zero);
+        foreach (var (a, b, w) in g.Segs) { r = r.Expand(ShadowOf(a, g.Base)).Expand(ShadowOf(b, g.Base)); }
+        return r.Grow(16);
+    }
+
     public static void TreeShadow(CanvasItem ci, TreeGeom g)
     {
         var c = new Color(0, 0, 0, 0.32f);

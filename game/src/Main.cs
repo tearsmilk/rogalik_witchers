@@ -442,18 +442,25 @@ public partial class GroundChunk : Node2D
 
     public GroundChunk(int cx, int cy) { _cx = cx; _cy = cy; }
 
-    public override void _Draw()
+    public override void _Ready() => AddChild(new Baked(new Rect2(0, 0, Size, Size), Paint, false));
+
+    void Paint(CanvasItem ci)
     {
+        void DrawRect(Rect2 r, Color c) => ci.DrawRect(r, c);
+        void DrawColoredPolygon(Vector2[] p, Color c) => ci.DrawColoredPolygon(p, c);
+        void DrawLine(Vector2 a, Vector2 b, Color c, float w) => ci.DrawLine(a, b, c, w);
+        var self = ci;
         DrawRect(new Rect2(0, 0, Size + 1, Size + 1), new Color("#4a4556"));
         int n = (int)(Size / Cell);
-        for (int ix = 0; ix < n; ix++)
-        for (int iy = 0; iy < n; iy++)
+        // клетки с запасом в одну по краям: фигуры соседних клеток, заходящие на этот кусок, тоже рисуются — без швов
+        for (int ix = -1; ix <= n; ix++)
+        for (int iy = -1; iy <= n; iy++)
         {
             int cx = _cx * n + ix, cy = _cy * n + iy;
             var o = new Vector2(ix * Cell, iy * Cell);
             float H(int s) => Main.Hash(cx, cy, s);
             if (H(1) < 0.35f)
-                Painter.Ellipse(this, o + new Vector2(H(11) * Cell, H(12) * Cell), 60 + H(13) * 50, 26 + H(14) * 20, new Color("#38333f"));
+                Painter.Ellipse(self, o + new Vector2(H(11) * Cell, H(12) * Cell), 60 + H(13) * 50, 26 + H(14) * 20, new Color("#38333f"));
             if (H(2) < 0.09f)
             {
                 int k2 = 2 + (int)(H(21) * 4);
@@ -497,24 +504,55 @@ public partial class TreeView : Node2D
 
     public TreeView(Painter.TreeGeom geom) { Geom = geom; }
 
-    public override void _Ready() => AddChild(new TreeShadowView(Geom) { ZIndex = -50 });
-
-    public override void _Draw()
+    public override void _Ready()
     {
-        for (int k = 0; k < 14; k++)
+        var b = Painter.TreeBounds(Geom).Grow(24);
+        AddChild(new Baked(b, ci =>
         {
-            float a = k * 2.4f, r = 10 + (k * 7) % 30;
-            Painter.Ellipse(this, new Vector2(Mathf.Cos(a) * r * 1.4f, Mathf.Sin(a) * r * 0.45f + 2), 4, 2, Leaves[k % Leaves.Length]);
-        }
-        Painter.Tree(this, Geom, 1);
+            for (int k = 0; k < 14; k++)
+            {
+                float a = k * 2.4f, r = 10 + (k * 7) % 30;
+                Painter.Ellipse(ci, new Vector2(Mathf.Cos(a) * r * 1.4f, Mathf.Sin(a) * r * 0.45f + 2), 4, 2, Leaves[k % Leaves.Length]);
+            }
+            Painter.Tree(ci, Geom, 1);
+        }, true));
+        var sb = Painter.TreeShadowBounds(Geom).Grow(12);
+        AddChild(new Baked(sb, ci => Painter.TreeShadow(ci, Geom), true) { ZIndex = -50 });
     }
 }
 
-public partial class TreeShadowView : Node2D
+/// <summary>
+/// «Запекание»: содержимое рисуется один раз в отдельный SubViewport и дальше показывается как одна текстура.
+/// Так видеокарта рисует не тысячи фигур каждый кадр, а один прямоугольник.
+/// </summary>
+public partial class Baked : Node2D
 {
-    readonly Painter.TreeGeom _geom;
-    public TreeShadowView(Painter.TreeGeom geom) { _geom = geom; }
-    public override void _Draw() => Painter.TreeShadow(this, _geom);
+    readonly Rect2 _bounds;
+    readonly Action<CanvasItem> _paint;
+    readonly bool _transparent;
+
+    public Baked(Rect2 bounds, Action<CanvasItem> paint, bool transparent) { _bounds = bounds; _paint = paint; _transparent = transparent; }
+
+    public override void _Ready()
+    {
+        var size = new Vector2I(Math.Max(1, Mathf.CeilToInt(_bounds.Size.X)), Math.Max(1, Mathf.CeilToInt(_bounds.Size.Y)));
+        var vp = new SubViewport
+        {
+            Size = size, TransparentBg = _transparent, Disable3D = true,
+            RenderTargetUpdateMode = SubViewport.UpdateMode.Once,
+            RenderTargetClearMode = SubViewport.ClearMode.Once,
+        };
+        vp.AddChild(new PaintNode(_paint) { Position = -_bounds.Position });
+        AddChild(vp);
+        AddChild(new Sprite2D { Texture = vp.GetTexture(), Centered = false, Position = _bounds.Position });
+    }
+
+    partial class PaintNode : Node2D
+    {
+        readonly Action<CanvasItem> _paint;
+        public PaintNode(Action<CanvasItem> paint) { _paint = paint; }
+        public override void _Draw() => _paint(this);
+    }
 }
 
 public partial class EnemyView : Node2D

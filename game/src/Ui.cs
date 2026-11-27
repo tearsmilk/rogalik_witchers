@@ -354,23 +354,25 @@ public partial class Hud : Control
         var W = Size.X; var H = Size.Y;
 
         Bar(new Rect2(0, 0, W, 8), p.Xp / p.XpNext, new Color("#8e7cc3"));
-        Bar(new Rect2(18, 22, 230, 18), p.Hp / p.MaxHp, new Color("#e74c3c"));
-        Text($"ОЗ {Mathf.CeilToInt(p.Hp)} / {p.MaxHp}", new Vector2(26, 37), 15, Colors.White);
-        Text($"Уровень {p.Level}", new Vector2(18, 64), 16, Colors.White);
+        Bar(new Rect2(18, 20, 260, 22), p.Hp / p.MaxHp, new Color("#e74c3c"));
+        Text($"ОЗ {Mathf.CeilToInt(p.Hp)} / {p.MaxHp}", new Vector2(26, 38), 17, Colors.White);
+        Text($"Уровень {p.Level}", new Vector2(18, 68), 19, Colors.White);
 
-        Text(Ui.Fmt(g.T), new Vector2(W / 2, 42), 26, Colors.White, HorizontalAlignment.Center);
-        Text($"Страницы гримуара: {g.PagesFound} / {Data.PagesToBoss}", new Vector2(W - 18, 36), 16, Gold, HorizontalAlignment.Right);
-        Text($"Побеждено: {g.Kills}", new Vector2(W - 18, 58), 15, new Color("#dddddd"), HorizontalAlignment.Right);
+        Text(Ui.Fmt(g.T), new Vector2(W / 2, 44), 30, Colors.White, HorizontalAlignment.Center);
+        Text($"Страницы гримуара: {g.PagesFound} / {Data.PagesToBoss}", new Vector2(W - 18, 36), 19, Gold, HorizontalAlignment.Right);
+        Text($"Побеждено: {g.Kills}", new Vector2(W - 18, 60), 17, new Color("#dddddd"), HorizontalAlignment.Right);
+        double fps = Engine.GetFramesPerSecond();
+        Text($"FPS {fps:0}", new Vector2(W - 18, 84), 16, fps >= 50 ? new Color("#8ef08a") : fps >= 30 ? new Color("#f0d78a") : new Color("#ff7b7b"), HorizontalAlignment.Right);
 
-        float y = 92;
+        float y = 100;
         foreach (var (id, lv) in p.Spells)
         {
             var s = Data.Spells[id];
-            DrawCircle(new Vector2(26, y - 5), 6, s.Color);
-            Text($"{s.Name} {lv}", new Vector2(38, y), 14, new Color("#eeeeee"));
-            y += 21;
+            DrawCircle(new Vector2(26, y - 6), 7, s.Color);
+            Text($"{s.Name} {lv}", new Vector2(40, y), 17, new Color("#eeeeee"));
+            y += 25;
         }
-        Text(p.DashCd > 0 ? $"Рывок: {p.DashCd:0.0}" : "Рывок готов", new Vector2(18, y + 4), 14, p.DashCd > 0 ? new Color("#888888") : new Color("#cceeee"));
+        Text(p.DashCd > 0 ? $"Рывок: {p.DashCd:0.0}" : "Рывок готов", new Vector2(18, y + 4), 17, p.DashCd > 0 ? new Color("#888888") : new Color("#cceeee"));
 
         if (p.Bouquet.Count > 0)
         {
@@ -400,7 +402,7 @@ public partial class Hud : Control
         }
 
         // Подсказки управления в правом нижнем углу
-        Prompts.DrawGameplay(this, new Vector2(W - 16, H - 16), _main.ShowPadPrompts, true);
+        Prompts.DrawGameplay(this, new Vector2(W - 16, H - 16), _main.ShowPadPrompts, true, 2.5f);
 
         // Стрелки к страницам, хранителям и боссу за пределами экрана
         var cam = _main.CameraCenter;
@@ -447,13 +449,13 @@ public static class Prompts
         {
             var (keys, text) = rows[i];
             float y = rightAlign ? anchor.Y - (rows.Length - i) * rowH : anchor.Y + i * rowH;
-            float textW = font.GetStringSize(text, HorizontalAlignment.Left, -1, 15).X;
+            float textW = font.GetStringSize(text, HorizontalAlignment.Left, -1, 18).X;
             float iconsW = keys.Length * (16 * scale + 3);
             float x = rightAlign ? anchor.X - textW - 10 - iconsW : anchor.X;
             foreach (var k in keys) x += InputIcons.Draw(ci, k, new Vector2(x, y), scale) + 3;
             var tp = new Vector2(x + 7, y + 16 * scale * 0.5f + 6);
-            ci.DrawStringOutline(font, tp, text, HorizontalAlignment.Left, -1, 15, 4, new Color(0, 0, 0, 0.8f));
-            ci.DrawString(font, tp, text, HorizontalAlignment.Left, -1, 15, new Color("#e8e0ff"));
+            ci.DrawStringOutline(font, tp, text, HorizontalAlignment.Left, -1, 18, 4, new Color(0, 0, 0, 0.8f));
+            ci.DrawString(font, tp, text, HorizontalAlignment.Left, -1, 18, new Color("#e8e0ff"));
         }
     }
 
