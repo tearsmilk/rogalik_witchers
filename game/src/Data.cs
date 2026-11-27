@@ -4,11 +4,6 @@ using Godot;
 
 namespace WitchApprentice;
 
-/// <summary>Спрайтлисты (CC0): Kenney Tiny Dungeon, Kenney Tiny Town, Clint Bellanger Tiny Creatures.</summary>
-public enum Sheet { Dungeon, Creatures, Town }
-
-public readonly record struct SpriteRef(Sheet Sheet, int Index);
-
 public sealed class SchoolDef
 {
     public string Id, Name, Desc, Spell;
@@ -33,20 +28,13 @@ public sealed class EnemyDef
 {
     public string Id;
     public float Hp, Speed, R, Dmg, Xp, Scale;
-    public SpriteRef Sprite;
     public Color Particle;
 }
 
 public static class Data
 {
     public const int PagesToBoss = 3;
-    public const float SpriteScale = 3f;
-
-    // Ведьма: девушка из Tiny Dungeon + шляпа из Tiny Creatures, фиолетовое перекрашивается под школу.
-    public static readonly SpriteRef WitchBody = new(Sheet.Dungeon, 99);
-    public static readonly SpriteRef WitchHat = new(Sheet.Creatures, 66);
-    public static readonly Color BaseDressLight = new(0.82f, 0.46f, 0.82f);
-    public static readonly Color BaseDressDark = new(0.61f, 0.30f, 0.64f);
+    public const float WitchScale = 1.7f;
 
     public static readonly Dictionary<string, SchoolDef> Schools = new()
     {
@@ -81,20 +69,10 @@ public static class Data
 
     public static readonly Dictionary<string, EnemyDef> Enemies = new()
     {
-        ["imp"] = new() { Id = "imp", Hp = 14, Speed = 88, R = 16, Dmg = 6, Xp = 1, Scale = 3, Sprite = new(Sheet.Creatures, 39), Particle = new Color("#c0392b") },
-        ["bat"] = new() { Id = "bat", Hp = 8, Speed = 140, R = 14, Dmg = 4, Xp = 1, Scale = 2.6f, Sprite = new(Sheet.Dungeon, 120), Particle = new Color("#8e5a3c") },
-        ["slime"] = new() { Id = "slime", Hp = 42, Speed = 58, R = 20, Dmg = 12, Xp = 3, Scale = 3.2f, Sprite = new(Sheet.Dungeon, 108), Particle = new Color("#52be80") },
-        ["elite"] = new() { Id = "elite", Hp = 240, Speed = 78, R = 26, Dmg = 16, Xp = 12, Scale = 4.2f, Sprite = new(Sheet.Creatures, 123), Particle = new Color("#922b21") },
-        ["boss"] = new() { Id = "boss", Hp = 2600, Speed = 68, R = 52, Dmg = 24, Xp = 0, Scale = 8f, Sprite = new(Sheet.Creatures, 38), Particle = new Color("#e74c3c") },
+        ["imp"] = new() { Id = "imp", Hp = 14, Speed = 88, R = 16, Dmg = 6, Xp = 1, Scale = 1.5f, Particle = new Color("#c0392b") },
+        ["bat"] = new() { Id = "bat", Hp = 8, Speed = 140, R = 14, Dmg = 4, Xp = 1, Scale = 1.6f, Particle = new Color("#8e5a3c") },
+        ["slime"] = new() { Id = "slime", Hp = 42, Speed = 58, R = 20, Dmg = 12, Xp = 3, Scale = 1.7f, Particle = new Color("#9b59b6") },
+        ["elite"] = new() { Id = "elite", Hp = 240, Speed = 78, R = 26, Dmg = 16, Xp = 12, Scale = 2.4f, Particle = new Color("#922b21") },
+        ["boss"] = new() { Id = "boss", Hp = 2600, Speed = 68, R = 52, Dmg = 24, Xp = 0, Scale = 3.6f, Particle = new Color("#e74c3c") },
     };
-
-    // Декор леса из Tiny Town.
-    public static readonly int[] GrassTiles = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 2 };
-    public static readonly int[] TreeTiles = { 4, 16, 28, 4, 16, 3, 15, 27 };
-    public static readonly int[] SmallDecor = { 5, 5, 29 };
-
-    // Снаряды.
-    public static readonly SpriteRef SparkSprite = new(Sheet.Creatures, 89);
-    public static readonly SpriteRef FireSprite = new(Sheet.Creatures, 55);
-    public static readonly SpriteRef IceSprite = new(Sheet.Creatures, 59);
 }

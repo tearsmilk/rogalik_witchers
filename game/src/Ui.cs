@@ -66,10 +66,13 @@ public partial class Ui : CanvasLayer
 
     static Button MakeButton(string text, Color accent, Vector2 size, System.Action onPress, int fontSize = 18)
     {
-        var b = new Button { Text = text, CustomMinimumSize = size, AutowrapMode = TextServer.AutowrapMode.WordSmart, FocusMode = Control.FocusModeEnum.None };
+        var b = new Button { Text = text, CustomMinimumSize = size, AutowrapMode = TextServer.AutowrapMode.WordSmart, FocusMode = Control.FocusModeEnum.All };
         b.AddThemeStyleboxOverride("normal", Box(Ink, accent, 2));
         b.AddThemeStyleboxOverride("hover", Box(new Color("#3a2f55"), accent, 3));
         b.AddThemeStyleboxOverride("pressed", Box(new Color("#4a3d6b"), accent, 3));
+        b.AddThemeStyleboxOverride("focus", Box(new Color(1, 1, 1, 0.08f), Colors.White, 3));
+        b.AddThemeStyleboxOverride("disabled", Box(Ink, accent, 2));
+        b.AddThemeColorOverride("font_disabled_color", new Color("#eeeeee"));
         b.AddThemeFontSizeOverride("font_size", fontSize);
         b.AddThemeColorOverride("font_color", new Color("#eeeeee"));
         b.AddThemeColorOverride("font_hover_color", Colors.White);
@@ -90,7 +93,24 @@ public partial class Ui : CanvasLayer
         v.AddThemeConstantOverride("separation", 14);
         center.AddChild(v);
         _modal = root;
+        Callable.From(() => FocusFirst(root)).CallDeferred();
         return v;
+    }
+
+    /// <summary>Фокус на первую кнопку (для геймпада/Enter) и короткая блокировка от случайного нажатия.</summary>
+    void FocusFirst(Control root)
+    {
+        if (!IsInstanceValid(root)) return;
+        var buttons = new System.Collections.Generic.List<Button>();
+        void Walk(Node n) { foreach (var c in n.GetChildren()) { if (c is Button b) buttons.Add(b); Walk(c); } }
+        Walk(root);
+        if (buttons.Count == 0) return;
+        foreach (var b in buttons) b.Disabled = true;
+        GetTree().CreateTimer(0.35).Timeout += () =>
+        {
+            foreach (var b in buttons) if (IsInstanceValid(b)) b.Disabled = false;
+            if (IsInstanceValid(buttons[0])) buttons[0].GrabFocus();
+        };
     }
 
     void CloseModal()
@@ -109,18 +129,60 @@ public partial class Ui : CanvasLayer
     public void ShowTitle()
     {
         _hud.Visible = false;
-        var v = NewModal(0.35f);
-        v.AddChild(MakeLabel("Ведьма-ученица", 64, Gold));
-        v.AddChild(MakeLabel("Юная ведьма проспала экзамен, а бесы растащили гримуар наставницы по Проклятому лесу. " +
-            $"Найди {Data.PagesToBoss} страницы, выбери свои школы магии и одолей Короля бесов!", 18, new Color("#dddddd"), wrap: true));
-        v.AddChild(new WitchPreview(_main, 5, new Vector2(200, 190)));
-        var start = MakeButton("Начать забег", Gold, new Vector2(280, 64), () => _main.StartRun(), 22);
-        var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
-        row.AddChild(start);
-        v.AddChild(row);
-        v.AddChild(MakeLabel("WASD — бег · Искра целится сама, зажми ЛКМ — стрельба в курсор · Пробел — рывок · Esc — пауза · F11 — полный экран",
-            14, new Color("#aaaaaa")));
-        if (_main.BestWin > 0) v.AddChild(MakeLabel("Лучшее время победы: " + Fmt(_main.BestWin), 14, new Color("#aaaaaa")));
+        _modal?.QueueFree();
+        var root = new Control();
+        AddChild(root);
+        root.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        _modal = root;
+
+        var bg = new TextureRect { Texture = GD.Load<Texture2D>("res://assets/forest_bg.svg"), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered, MouseFilter = Control.MouseFilterEnum.Ignore };
+        root.AddChild(bg);
+        bg.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+
+        var portrait = new TextureRect { Texture = GD.Load<Texture2D>("res://assets/witch_portrait.svg"), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, MouseFilter = Control.MouseFilterEnum.Ignore };
+        root.AddChild(portrait);
+        portrait.AnchorLeft = 0.48f; portrait.AnchorRight = 1f; portrait.AnchorTop = 0.02f; portrait.AnchorBottom = 1f;
+
+        var left = new MarginContainer();
+        root.AddChild(left);
+        left.AnchorLeft = 0; left.AnchorRight = 0.52f; left.AnchorTop = 0; left.AnchorBottom = 1;
+        left.AddThemeConstantOverride("margin_left", 70);
+        var v = new VBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        v.AddThemeConstantOverride("separation", 16);
+        left.AddChild(v);
+
+        var title = MakeLabel("Ведьма-ученица", 66, Gold);
+        title.HorizontalAlignment = HorizontalAlignment.Left;
+        v.AddChild(title);
+        var story = MakeLabel("Юная ведьма проспала экзамен, а бесы растащили гримуар наставницы по Проклятому лесу. " +
+            $"Найди {Data.PagesToBoss} страницы, собери букет, выбери школы магии и одолей Короля бесов!", 18, new Color("#ddd6ee"), wrap: true);
+        story.HorizontalAlignment = HorizontalAlignment.Left;
+        story.CustomMinimumSize = new Vector2(480, 0);
+        v.AddChild(story);
+        v.AddChild(new Control { CustomMinimumSize = new Vector2(0, 10) });
+        v.AddChild(LeftAligned(MakeButton("Начать забег", Gold, new Vector2(300, 60), () => _main.StartRun(), 22)));
+        v.AddChild(LeftAligned(MakeButton("Выйти", new Color("#9a8fb5"), new Vector2(300, 48), () => _main.GetTree().Quit())));
+        v.AddChild(new Control { CustomMinimumSize = new Vector2(0, 10) });
+        var keys = MakeLabel("Клавиатура: WASD — бег · ЛКМ — стрельба в курсор · Пробел — рывок · Esc — пауза\n" +
+            "DualSense: левый стик — бег · правый стик — прицел · ✕ или R1 — рывок · Options — пауза", 14, new Color("#a99fc4"));
+        keys.HorizontalAlignment = HorizontalAlignment.Left;
+        v.AddChild(keys);
+        if (_main.BestWin > 0)
+        {
+            var best = MakeLabel("Лучшее время победы: " + Fmt(_main.BestWin), 14, new Color("#a99fc4"));
+            best.HorizontalAlignment = HorizontalAlignment.Left;
+            v.AddChild(best);
+        }
+        Callable.From(() => FocusFirst(root)).CallDeferred();
+    }
+
+    static Control LeftAligned(Control c)
+    {
+        var row = new HBoxContainer();
+        row.AddChild(c);
+        return row;
     }
 
     public void ShowChoices(string title, string subtitle, bool isPage)
@@ -134,17 +196,17 @@ public partial class Ui : CanvasLayer
         {
             int idx = i;
             var c = _main.Choices[i];
-            row.AddChild(MakeButton($"{c.Title}\n\n{c.Desc}\n\n[{i + 1}]", c.Color, new Vector2(240, 170), () => _main.ApplyChoice(idx), 17));
+            row.AddChild(MakeButton($"{c.Title}\n\n{c.Desc}\n\n[{i + 1}]", c.Color, new Vector2(250, 180), () => _main.ApplyChoice(idx), 17));
         }
         v.AddChild(row);
-        if (isPage) v.AddChild(new WitchPreview(_main, 4, new Vector2(160, 150)));
+        if (isPage) v.AddChild(new WitchPreview(_main, 1.8f, new Vector2(170, 170)));
     }
 
     public void ShowPause()
     {
         var v = NewModal(0.7f);
         v.AddChild(MakeLabel("Пауза", 44, Gold));
-        v.AddChild(Centered(MakeButton("Продолжить [Esc]", Gold, new Vector2(260, 56), () => _main.SetPaused(false))));
+        v.AddChild(Centered(MakeButton("Продолжить", Gold, new Vector2(260, 56), () => _main.SetPaused(false))));
         v.AddChild(Centered(MakeButton("В главное меню", new Color("#bbbbbb"), new Vector2(260, 56), () => _main.ToTitle())));
         v.AddChild(Centered(MakeButton("Выйти из игры", new Color("#e57373"), new Vector2(260, 56), () => _main.GetTree().Quit())));
     }
@@ -168,8 +230,8 @@ public partial class Ui : CanvasLayer
         v.AddChild(MakeLabel(title, 44, win ? Gold : new Color("#e57373")));
         v.AddChild(MakeLabel(text, 18, new Color("#dddddd")));
         v.AddChild(MakeLabel($"Время: {Fmt(g.T)}   ·   Уровень: {g.P.Level}   ·   Побеждено бесов: {g.Kills}   ·   Страницы: {g.PagesFound}", 17, new Color("#dddddd")));
-        v.AddChild(new WitchPreview(_main, 4, new Vector2(160, 150)));
-        v.AddChild(Centered(MakeButton("Новый забег [Enter]", Gold, new Vector2(260, 60), () => _main.StartRun(), 20)));
+        v.AddChild(new WitchPreview(_main, 1.8f, new Vector2(170, 170)));
+        v.AddChild(Centered(MakeButton("Новый забег", Gold, new Vector2(260, 60), () => _main.StartRun(), 20)));
         v.AddChild(Centered(MakeButton("В главное меню", new Color("#bbbbbb"), new Vector2(260, 50), () => _main.ToTitle())));
     }
 
@@ -201,7 +263,7 @@ public partial class WitchPreview : Control
     public override void _Draw()
     {
         var look = _main.G?.P.Look ?? new WitchLook();
-        Art.DrawWitch(this, look, new Vector2(Size.X / 2, Size.Y - 10), _scale, false, _main.UiTime * 3, false);
+        Painter.Witch(this, look, new Vector2(Size.X / 2, Size.Y - 8), _scale, false, _main.UiTime * 3, false);
     }
 }
 

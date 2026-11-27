@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bi34cuj5ejt7i"
-path="res://.godot/imported/dungeon.png-2922ce75f85d393595428b44bf1167e9.ctex"
+uid="uid://dnad34i0ef4eg"
+path="res://.godot/imported/witch_portrait.svg-3e7197bdad67ecf7a9b994692f25cf89.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/dungeon.png"
-dest_files=["res://.godot/imported/dungeon.png-2922ce75f85d393595428b44bf1167e9.ctex"]
+source_file="res://assets/witch_portrait.svg"
+dest_files=["res://.godot/imported/witch_portrait.svg-3e7197bdad67ecf7a9b994692f25cf89.ctex"]
 
 [params]
 
@@ -38,3 +38,6 @@ process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
 detect_3d/compress_to=1
+svg/scale=1.0
+editor/scale_with_editor_scale=false
+editor/convert_colors_with_editor_theme=false

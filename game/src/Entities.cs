@@ -56,4 +56,10 @@ public sealed class Choice
     public System.Action Apply;
 }
 
+/// <summary>Внешний вид ведьмы: каждая страница гримуара меняет его часть.</summary>
+public sealed class WitchLook
+{
+    public Color? DressLight, DressDark, HatLight, HatDark, Aura;
+}
+
 public enum GameState { Title, Play, LevelUp, PageChoice, Pause, Over, Win }

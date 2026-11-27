@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 1000" width="700" height="1000">
+  <defs>
+    <linearGradient id="hair" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7a5ae0"/>
+      <stop offset="0.6" stop-color="#4b35a8"/>
+      <stop offset="1" stop-color="#271a66"/>
+    </linearGradient>
+    <linearGradient id="hairFront" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8c6cf0"/>
+      <stop offset="1" stop-color="#5a40c0"/>
+    </linearGradient>
+    <linearGradient id="dress" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#e7e0f7"/>
+      <stop offset="1" stop-color="#b9abdf"/>
+    </linearGradient>
+    <linearGradient id="cape" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a2a74"/>
+      <stop offset="1" stop-color="#1a1240"/>
+    </linearGradient>
+    <linearGradient id="hatTop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#d9d0f0"/>
+    </linearGradient>
+    <radialGradient id="iris" cx="0.5" cy="0.65" r="0.6">
+      <stop offset="0" stop-color="#ff8fcf"/>
+      <stop offset="0.5" stop-color="#c2408f"/>
+      <stop offset="1" stop-color="#4a1258"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#e8d8ff" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#e8d8ff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="skin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff1ea"/>
+      <stop offset="1" stop-color="#ffe0d4"/>
+    </linearGradient>
+  </defs>
+
+  <ellipse cx="350" cy="520" rx="330" ry="470" fill="url(#glow)"/>
+
+  <!-- волосы сзади -->
+  <path d="M250 240 C190 320 170 470 190 600 C205 700 175 790 150 860 C230 830 260 760 270 700 L300 420 L400 420 L430 700 C440 770 480 830 560 860 C530 780 500 700 515 600 C535 470 510 320 450 240 Z" fill="url(#hair)"/>
+
+  <!-- плащ -->
+  <path d="M262 430 C220 520 190 700 160 1000 L540 1000 C510 700 480 520 438 430 Z" fill="url(#cape)"/>
+
+  <!-- юбка -->
+  <path d="M272 560 L428 560 C470 700 520 860 560 1000 L140 1000 C180 860 230 700 272 560 Z" fill="url(#dress)"/>
+  <path d="M300 580 C285 720 250 860 230 1000 M350 580 L350 1000 M400 580 C415 720 450 860 470 1000" stroke="#b7a8dc" stroke-width="3" fill="none" opacity="0.7"/>
+  <path d="M150 975 C280 955 420 955 552 975 L560 1000 L140 1000 Z" fill="#8e6cc9"/>
+
+  <!-- корсаж -->
+  <path d="M266 432 Q350 412 434 432 L426 566 L274 566 Z" fill="url(#dress)"/>
+  <path d="M296 470 L404 470 L396 566 L304 566 Z" fill="#6e4fc0"/>
+  <path d="M320 480 L380 500 M380 480 L320 500 M320 505 L380 525 M380 505 L320 525 M320 530 L380 550 M380 530 L320 550" stroke="#e8dcff" stroke-width="2.5"/>
+
+  <!-- шея и высокий воротник -->
+  <rect x="332" y="370" width="36" height="58" fill="#ffe3d6"/>
+  <path d="M318 400 L382 400 L392 440 L350 452 L308 440 Z" fill="#ffffff"/>
+  <path d="M308 440 L350 452 L392 440" stroke="#b7a8dc" stroke-width="3" fill="none"/>
+  <circle cx="350" cy="446" r="9" fill="#c48bff" stroke="#ffffff" stroke-width="3"/>
+
+  <!-- рукава и руки -->
+  <path d="M268 436 C245 470 240 520 252 560 C270 590 320 610 372 606 L378 584 C330 584 290 570 282 545 C276 515 284 480 300 450 Z" fill="url(#dress)"/>
+  <path d="M432 436 C455 470 462 520 452 556 C440 584 420 596 404 600 L396 580 C418 570 428 552 430 530 C432 500 420 470 404 452 Z" fill="url(#dress)"/>
+  <rect x="362" y="580" width="22" height="30" rx="8" fill="#8e6cc9"/>
+  <rect x="394" y="574" width="20" height="28" rx="8" fill="#8e6cc9"/>
+
+  <!-- букет -->
+  <path d="M378 610 L410 596 L520 440 L440 420 Z" fill="#f7f3ff" stroke="#cfc3ee" stroke-width="3"/>
+  <g>
+    <circle cx="470" cy="420" r="66" fill="#3f6e4a"/>
+    <circle cx="440" cy="400" r="22" fill="#f6d6ea"/><circle cx="440" cy="400" r="11" fill="#e19ac2"/>
+    <circle cx="488" cy="384" r="24" fill="#ffffff"/><circle cx="488" cy="384" r="12" fill="#e6defa"/>
+    <circle cx="512" cy="428" r="20" fill="#c9a8ff"/><circle cx="512" cy="428" r="9" fill="#9a72e6"/>
+    <circle cx="462" cy="440" r="21" fill="#ffd1e8"/><circle cx="462" cy="440" r="10" fill="#f39ac6"/>
+    <circle cx="430" cy="446" r="15" fill="#ffffff"/><circle cx="430" cy="446" r="7" fill="#d8cdf5"/>
+    <circle cx="500" cy="468" r="15" fill="#e6c8ff"/><circle cx="470" cy="362" r="14" fill="#ffd1e8"/>
+    <circle cx="526" cy="388" r="12" fill="#ffffff"/><circle cx="420" cy="374" r="11" fill="#c9a8ff"/>
+    <path d="M410 360 l-14 -18 M532 410 l18 -10 M520 360 l12 -18 M440 360 l-6 -20" stroke="#5f9a6a" stroke-width="4"/>
+  </g>
+  <!-- бант -->
+  <path d="M392 600 C360 570 340 590 360 610 C340 630 365 650 392 610 C420 650 445 630 425 610 C445 590 425 570 392 600 Z" fill="#c9a8ff"/>
+  <path d="M388 612 C380 660 370 700 352 740 M398 612 C410 670 420 710 440 748" stroke="#c9a8ff" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <ellipse cx="384" cy="598" rx="15" ry="11" fill="#ffe3d6"/>
+  <ellipse cx="408" cy="592" rx="13" ry="10" fill="#ffe3d6"/>
+
+  <!-- лицо -->
+  <path d="M272 286 Q274 368 350 396 Q426 368 428 286 Q428 206 350 202 Q272 206 272 286 Z" fill="url(#skin)"/>
+  <!-- глаза -->
+  <g>
+    <ellipse cx="314" cy="306" rx="24" ry="28" fill="#ffffff"/>
+    <ellipse cx="316" cy="310" rx="19" ry="24" fill="url(#iris)"/>
+    <ellipse cx="317" cy="314" rx="9" ry="12" fill="#2a0a34"/>
+    <circle cx="309" cy="300" r="6" fill="#ffffff"/>
+    <circle cx="324" cy="320" r="3" fill="#ffffff" opacity="0.8"/>
+    <path d="M288 292 Q312 272 340 290" stroke="#2a1638" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M288 292 L280 286" stroke="#2a1638" stroke-width="4" stroke-linecap="round"/>
+
+    <ellipse cx="388" cy="306" rx="24" ry="28" fill="#ffffff"/>
+    <ellipse cx="386" cy="310" rx="19" ry="24" fill="url(#iris)"/>
+    <ellipse cx="385" cy="314" rx="9" ry="12" fill="#2a0a34"/>
+    <circle cx="379" cy="300" r="6" fill="#ffffff"/>
+    <circle cx="394" cy="320" r="3" fill="#ffffff" opacity="0.8"/>
+    <path d="M362 290 Q390 272 414 292" stroke="#2a1638" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M414 292 L422 286" stroke="#2a1638" stroke-width="4" stroke-linecap="round"/>
+
+    <path d="M292 262 Q312 254 332 262 M368 262 Q388 254 408 262" stroke="#4b35a8" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+  <ellipse cx="296" cy="346" rx="18" ry="8" fill="#ff8fb0" opacity="0.35"/>
+  <ellipse cx="404" cy="346" rx="18" ry="8" fill="#ff8fb0" opacity="0.35"/>
+  <path d="M350 330 l-3 10" stroke="#e8a89a" stroke-width="2" stroke-linecap="round"/>
+  <path d="M338 360 Q350 368 362 360" stroke="#c0606e" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+  <!-- чёлка и пряди -->
+  <path d="M262 300 C258 240 290 200 350 196 C410 200 444 240 440 300 C432 280 424 262 414 252 C410 276 402 286 394 292 C392 266 384 250 372 240 C366 266 358 278 346 286 C346 260 336 244 326 236 C318 262 306 276 292 284 C296 262 296 252 290 246 C278 262 270 282 262 300 Z" fill="url(#hairFront)"/>
+  <path d="M268 280 C252 330 250 420 262 520 C268 560 258 600 246 630 C282 600 288 560 286 520 C280 440 280 360 290 300 Z" fill="url(#hairFront)"/>
+  <path d="M432 280 C448 330 450 420 438 520 C432 560 442 600 454 630 C418 600 412 560 414 520 C420 440 420 360 410 300 Z" fill="url(#hairFront)"/>
+  <path d="M300 220 C320 210 340 206 360 206" stroke="#b9a2ff" stroke-width="5" fill="none" opacity="0.7" stroke-linecap="round"/>
+
+  <!-- шляпа -->
+  <ellipse cx="350" cy="222" rx="236" ry="58" fill="#4b2f94" transform="rotate(-7 350 222)"/>
+  <ellipse cx="350" cy="214" rx="230" ry="50" fill="url(#hatTop)" transform="rotate(-7 350 214)"/>
+  <path d="M252 214 L446 192 C420 150 392 104 362 64 C340 34 308 26 276 40 C306 50 324 70 322 96 C306 140 280 178 252 214 Z" fill="url(#hatTop)"/>
+  <path d="M276 40 C306 50 324 70 322 96 C306 140 280 178 252 214 L272 212 C296 176 318 140 334 98 C338 70 316 46 276 40 Z" fill="#cfc3ee"/>
+  <path d="M250 214 L448 190 L452 172 L256 194 Z" fill="#6e4fc0"/>
+  <!-- розы на шляпе -->
+  <g>
+    <circle cx="436" cy="184" r="26" fill="#ffffff"/>
+    <path d="M436 170 a12 12 0 1 1 -12 14 a7 7 0 1 1 10 -6" stroke="#cfc3ee" stroke-width="3" fill="none"/>
+    <circle cx="470" cy="196" r="20" fill="#e6defa"/>
+    <path d="M470 186 a9 9 0 1 1 -9 10" stroke="#b9abdf" stroke-width="3" fill="none"/>
+    <circle cx="410" cy="200" r="16" fill="#f6d6ea"/>
+    <path d="M410 192 a7 7 0 1 1 -7 8" stroke="#e19ac2" stroke-width="2.5" fill="none"/>
+    <path d="M488 210 C510 230 520 250 512 280 M480 214 C496 240 498 262 488 290" stroke="#c9a8ff" stroke-width="6" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- искры -->
+  <g fill="#ffffff">
+    <path d="M150 300 l6 16 l16 6 l-16 6 l-6 16 l-6 -16 l-16 -6 l16 -6 Z" opacity="0.8"/>
+    <path d="M590 560 l4 11 l11 4 l-11 4 l-4 11 l-4 -11 l-11 -4 l11 -4 Z" opacity="0.7"/>
+    <path d="M560 120 l3 9 l9 3 l-9 3 l-3 9 l-3 -9 l-9 -3 l9 -3 Z" opacity="0.7"/>
+  </g>
+  <g fill="#f3b6d8" opacity="0.8">
+    <ellipse cx="120" cy="520" rx="9" ry="4" transform="rotate(30 120 520)"/>
+    <ellipse cx="600" cy="330" rx="8" ry="4" transform="rotate(-25 600 330)"/>
+    <ellipse cx="210" cy="140" rx="7" ry="3.5" transform="rotate(15 210 140)"/>
+  </g>
+</svg>

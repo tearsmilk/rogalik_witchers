@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" width="1600" height="1000">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1430"/>
+      <stop offset="0.55" stop-color="#2b1f48"/>
+      <stop offset="1" stop-color="#120d1f"/>
+    </linearGradient>
+    <radialGradient id="moon" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fff6e0"/>
+      <stop offset="0.35" stop-color="#e9dcff" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#8f7cd6" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="mist" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a78bdc" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#a78bdc" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#a78bdc" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="fly" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#f4ffc0"/>
+      <stop offset="0.3" stop-color="#c8ff7a" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#c8ff7a" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="pinkglow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ff9fd6" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ff9fd6" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a1f3c"/>
+      <stop offset="1" stop-color="#0c0814"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#sky)"/>
+  <circle cx="1180" cy="190" r="260" fill="url(#moon)" opacity="0.55"/>
+  <circle cx="1180" cy="190" r="70" fill="#f6efff" opacity="0.85"/>
+
+  <!-- дальний лес -->
+  <g fill="#3a2c5c" opacity="0.75">
+    <path d="M0 640 L0 520 Q40 470 70 520 L90 380 L110 520 Q150 470 190 530 L230 420 L260 540 Q300 500 340 560 L380 440 L410 560 Q470 520 520 580 L560 450 L600 580 Q660 540 700 600 L760 470 L800 600 Q860 560 900 610 L950 480 L990 610 Q1050 570 1100 620 L1150 470 L1190 620 Q1250 580 1300 630 L1350 500 L1390 630 Q1450 590 1500 640 L1550 510 L1600 640 L1600 700 L0 700 Z"/>
+  </g>
+  <rect y="520" width="1600" height="220" fill="url(#mist)"/>
+
+  <!-- средний лес: стволы -->
+  <g fill="#241a3a">
+    <path d="M120 760 C130 600 105 470 135 300 L150 300 C135 470 160 600 160 760 Z"/>
+    <path d="M135 420 C100 380 70 360 40 360 L45 352 C80 352 110 370 140 400 Z"/>
+    <path d="M150 360 C190 320 220 300 260 296 L262 305 C225 310 195 330 156 372 Z"/>
+    <path d="M420 780 C440 620 400 520 430 330 L452 330 C428 520 470 620 470 780 Z"/>
+    <path d="M435 470 C390 430 350 420 310 425 L312 416 C355 410 395 420 440 455 Z"/>
+    <path d="M450 400 C500 360 540 350 590 352 L589 362 C545 362 505 375 456 414 Z"/>
+    <path d="M1380 780 C1395 610 1360 500 1390 320 L1410 320 C1385 500 1425 610 1425 780 Z"/>
+    <path d="M1395 450 C1350 410 1310 400 1270 404 L1271 395 C1315 390 1355 402 1400 436 Z"/>
+    <path d="M1410 380 C1460 340 1500 330 1550 333 L1549 343 C1505 343 1465 356 1416 394 Z"/>
+  </g>
+  <rect y="640" width="1600" height="200" fill="url(#mist)" opacity="0.8"/>
+
+  <!-- земля -->
+  <path d="M0 760 Q400 700 800 740 T1600 730 L1600 1000 L0 1000 Z" fill="url(#ground)"/>
+
+  <!-- ближние кривые деревья -->
+  <g fill="#0e0a17">
+    <path d="M-20 1000 C40 820 10 640 60 420 C80 330 70 220 110 120 L132 128 C100 230 108 330 92 430 C50 640 90 820 60 1000 Z"/>
+    <path d="M80 520 C140 470 190 440 260 430 C300 424 330 400 350 370 L360 378 C340 414 305 440 262 446 C200 456 150 486 92 538 Z"/>
+    <path d="M100 330 C60 290 20 270 -20 268 L-18 256 C26 258 70 280 110 318 Z"/>
+    <path d="M100 220 C140 170 170 140 220 120 L226 130 C180 152 150 182 112 230 Z"/>
+    <path d="M1560 1000 C1520 840 1560 660 1510 480 C1490 400 1500 300 1470 200 L1492 194 C1520 296 1512 394 1532 470 C1580 650 1550 830 1600 1000 Z"/>
+    <path d="M1520 560 C1460 520 1410 500 1350 500 C1310 500 1280 480 1260 450 L1268 444 C1290 470 1316 486 1352 486 C1414 486 1466 506 1530 546 Z"/>
+    <path d="M1500 330 C1540 280 1570 260 1610 250 L1612 262 C1576 272 1548 292 1510 340 Z"/>
+  </g>
+
+  <!-- светящиеся розовые кусты и светлячки -->
+  <ellipse cx="260" cy="860" rx="160" ry="60" fill="url(#pinkglow)"/>
+  <ellipse cx="1250" cy="880" rx="200" ry="70" fill="url(#pinkglow)"/>
+  <g fill="#ff9fd6" opacity="0.8">
+    <circle cx="230" cy="850" r="5"/><circle cx="262" cy="838" r="4"/><circle cx="295" cy="856" r="5"/><circle cx="248" cy="870" r="3"/>
+    <circle cx="1220" cy="868" r="5"/><circle cx="1258" cy="852" r="4"/><circle cx="1290" cy="872" r="5"/><circle cx="1320" cy="860" r="3"/>
+  </g>
+  <g>
+    <circle cx="520" cy="610" r="18" fill="url(#fly)"/>
+    <circle cx="690" cy="520" r="14" fill="url(#fly)"/>
+    <circle cx="880" cy="660" r="20" fill="url(#fly)"/>
+    <circle cx="1020" cy="560" r="12" fill="url(#fly)"/>
+    <circle cx="330" cy="700" r="16" fill="url(#fly)"/>
+    <circle cx="1160" cy="700" r="16" fill="url(#fly)"/>
+    <circle cx="760" cy="780" r="14" fill="url(#fly)"/>
+    <circle cx="1450" cy="620" r="12" fill="url(#fly)"/>
+    <circle cx="180" cy="560" r="12" fill="url(#fly)"/>
+  </g>
+  <!-- лепестки -->
+  <g fill="#f3b6d8" opacity="0.7">
+    <ellipse cx="610" cy="300" rx="6" ry="3" transform="rotate(30 610 300)"/>
+    <ellipse cx="820" cy="420" rx="5" ry="2.5" transform="rotate(-20 820 420)"/>
+    <ellipse cx="980" cy="260" rx="6" ry="3" transform="rotate(50 980 260)"/>
+    <ellipse cx="380" cy="200" rx="5" ry="2.5" transform="rotate(10 380 200)"/>
+    <ellipse cx="1320" cy="420" rx="6" ry="3" transform="rotate(-40 1320 420)"/>
+  </g>
+  <rect width="1600" height="1000" fill="#0a0614" opacity="0.25"/>
+</svg>

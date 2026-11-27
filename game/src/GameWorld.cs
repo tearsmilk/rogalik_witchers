@@ -97,7 +97,7 @@ public sealed class GameWorld
             e.Kb += dir * kb * k;
         }
         if (slow > 0) e.Slow = Mathf.Max(e.Slow, slow);
-        Texts.Add(new FloatText { Pos = e.Pos + new Vector2(Rand(-6, 6), -e.R * 2), Text = Mathf.RoundToInt(dmg).ToString(), T = 0.7f, Crit = crit,
+        Texts.Add(new FloatText { Pos = e.Pos + new Vector2(Rand(-6, 6), -Painter.TopHeight(e) - 4), Text = Mathf.RoundToInt(dmg).ToString(), T = 0.7f, Crit = crit,
             C = crit ? new Color("#ffd54f") : Colors.White });
         Sound?.Invoke("hit");
     }
@@ -106,7 +106,7 @@ public sealed class GameWorld
     {
         Kills++;
         for (int i = 0; i < 8; i++)
-            Particles.Add(new Particle { Pos = e.Pos - new Vector2(0, e.R), Vel = new Vector2(Rand(-120, 120), Rand(-120, 120)), T = Rand(0.3f, 0.6f), C = e.Def.Particle, S = Rand(3, 6) });
+            Particles.Add(new Particle { Pos = e.Pos - new Vector2(0, Painter.BodyHeight(e)), Vel = new Vector2(Rand(-120, 120), Rand(-120, 120)), T = Rand(0.3f, 0.6f), C = e.Def.Particle, S = Rand(3, 6) });
         if (e.Xp > 0)
         {
             int n = e.IsElite ? 5 : 1;
@@ -122,7 +122,7 @@ public sealed class GameWorld
             Boss = null;
             Shake = 0.8f;
             for (int i = 0; i < 60; i++)
-                Particles.Add(new Particle { Pos = e.Pos - new Vector2(0, 40), Vel = new Vector2(Rand(-300, 300), Rand(-300, 300)), T = Rand(0.6f, 1.4f),
+                Particles.Add(new Particle { Pos = e.Pos - new Vector2(0, 90), Vel = new Vector2(Rand(-300, 300), Rand(-300, 300)), T = Rand(0.6f, 1.4f),
                     C = Pick(new[] { new Color("#f7dc6f"), new Color("#ff7043"), new Color("#d7bde2") }), S = Rand(4, 8) });
             WinAt = T + 1.2f;
         }
@@ -220,7 +220,7 @@ public sealed class GameWorld
 
     public static float FrostRadius(int lv) => 78 + 4 * lv;
     public static int FrostCount(int lv) => 1 + lv;
-    public Vector2 CastOrigin => P.Pos + new Vector2(0, -30);
+    public Vector2 CastOrigin => P.Pos + new Vector2(P.Face * 19, -95);
 
     void CastSpells(float dt, InputState input)
     {
@@ -234,7 +234,7 @@ public sealed class GameWorld
             if (!input.AimAtCursor)
             {
                 var e = Nearest(P.Pos, 600);
-                if (e != null) ang = (e.Pos - new Vector2(0, e.R) - CastOrigin).Angle();
+                if (e != null) ang = (e.Pos - new Vector2(0, Painter.BodyHeight(e)) - CastOrigin).Angle();
             }
             int n = 1 + sl / 2 + P.ExtraProj;
             for (int i = 0; i < n; i++)
@@ -252,7 +252,7 @@ public sealed class GameWorld
             if (e != null)
             {
                 int n = 1 + P.ExtraProj;
-                float baseA = (e.Pos - new Vector2(0, e.R) - CastOrigin).Angle();
+                float baseA = (e.Pos - new Vector2(0, Painter.BodyHeight(e)) - CastOrigin).Angle();
                 for (int i = 0; i < n; i++)
                 {
                     float a = baseA + (i - (n - 1) / 2f) * 0.35f;
@@ -285,7 +285,7 @@ public sealed class GameWorld
                 for (int i = 0; i < 1 + ll && cur != null; i++)
                 {
                     hit.Add(cur);
-                    pts.Add(cur.Pos - new Vector2(0, cur.R));
+                    pts.Add(cur.Pos - new Vector2(0, Painter.BodyHeight(cur)));
                     DamageEnemy(cur, 20 + 7 * (ll - 1));
                     Enemy nx = null;
                     float nd = 170 * 170;
@@ -310,10 +310,10 @@ public sealed class GameWorld
             float R = FrostRadius(il);
             for (int i = 0; i < n; i++)
             {
-                var s = P.Pos + new Vector2(0, -20) + Vector2.FromAngle(FrostAngle + i * Mathf.Tau / n) * R;
+                var s = P.Pos + new Vector2(0, -45) + Vector2.FromAngle(FrostAngle + i * Mathf.Tau / n) * R;
                 foreach (var e in Enemies)
                 {
-                    if (s.DistanceSquaredTo(e.Pos - new Vector2(0, e.R)) < (e.R + 10) * (e.R + 10) && T - e.FrostHitAt > 0.45f)
+                    if (s.DistanceSquaredTo(e.Pos - new Vector2(0, Painter.BodyHeight(e))) < (e.R + 10) * (e.R + 10) && T - e.FrostHitAt > 0.45f)
                     {
                         e.FrostHitAt = T;
                         DamageEnemy(e, 7 + 3 * (il - 1), kb: 120, slow: 1.2f);
@@ -331,7 +331,7 @@ public sealed class GameWorld
                 C = Pick(new[] { new Color("#ff7043"), new Color("#f5b041"), new Color("#fdebd0") }), S = Rand(3, 7) });
         foreach (var e in Enemies)
         {
-            var body = e.Pos - new Vector2(0, e.R);
+            var body = e.Pos - new Vector2(0, Painter.BodyHeight(e));
             if (at.DistanceSquaredTo(body) < (radius + e.R) * (radius + e.R)) DamageEnemy(e, dmg, kb: 160, from: at);
         }
         Shake = Mathf.Max(Shake, 0.08f);
@@ -357,7 +357,7 @@ public sealed class GameWorld
         {
             P.DashT -= dt;
             P.Pos += P.DashDir * 820 * dt;
-            Particles.Add(new Particle { Pos = P.Pos - new Vector2(0, 20), T = 0.25f, C = P.Look.DressLight ?? Data.BaseDressLight, S = 8 });
+            Particles.Add(new Particle { Pos = P.Pos - new Vector2(0, 50), T = 0.3f, C = P.Look.Aura ?? P.Look.DressLight ?? new Color("#b39ddb"), S = 9 });
         }
         else P.Pos += move * P.Speed * dt;
         if (Mathf.Abs(input.Cursor.X - P.Pos.X) > 4) P.Face = input.Cursor.X > P.Pos.X ? 1 : -1;
@@ -403,7 +403,7 @@ public sealed class GameWorld
             {
                 if (b.T <= 0) break;
                 if (b.Hit.Contains(e)) continue;
-                var body = e.Pos - new Vector2(0, e.R);
+                var body = e.Pos - new Vector2(0, Painter.BodyHeight(e));
                 if (b.Pos.DistanceSquaredTo(body) < (b.R + e.R) * (b.R + e.R))
                 {
                     b.Hit.Add(e);
@@ -438,7 +438,7 @@ public sealed class GameWorld
                     e.ShootCd = rage ? 2 : 3;
                     int n = rage ? 20 : 14;
                     float off = Rand(0, 1);
-                    var origin = e.Pos - new Vector2(0, e.R);
+                    var origin = e.Pos - new Vector2(0, Painter.BodyHeight(e));
                     for (int i = 0; i < n; i++)
                         FoeBullets.Add(new FoeBullet { Pos = origin, Vel = Vector2.FromAngle(off + i * Mathf.Tau / n) * 170, R = 9, T = 5, Dmg = 12 });
                     for (int i = 0; i < 4; i++) SpawnEnemy("imp", e.Pos + new Vector2(Rand(-60, 60), Rand(-60, 60)));
@@ -461,7 +461,7 @@ public sealed class GameWorld
         {
             b.Pos += b.Vel * dt;
             b.T -= dt;
-            if (b.Pos.DistanceSquaredTo(P.Pos - new Vector2(0, 20)) < (b.R + P.R) * (b.R + P.R)) { HurtPlayer(b.Dmg); b.T = 0; }
+            if (b.Pos.DistanceSquaredTo(P.Pos - new Vector2(0, 45)) < (b.R + P.R) * (b.R + P.R)) { HurtPlayer(b.Dmg); b.T = 0; }
         }
         FoeBullets.RemoveAll(b => b.T <= 0);
 
@@ -488,7 +488,7 @@ public sealed class GameWorld
                 f.Got = true;
                 f.Kind.Apply(P);
                 P.Bouquet.Add(f.Kind);
-                Texts.Add(new FloatText { Pos = P.Pos - new Vector2(0, 80), Text = $"{f.Kind.Name}: {f.Kind.Desc}", T = 1.6f, C = f.Kind.Color, Big = true });
+                Texts.Add(new FloatText { Pos = P.Pos - new Vector2(0, 175), Text = $"{f.Kind.Name}: {f.Kind.Desc}", T = 1.6f, C = f.Kind.Color, Big = true });
                 Sound?.Invoke("flower");
             }
             else if (d2 > 1600 * 1600) f.Got = true;
