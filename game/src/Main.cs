@@ -49,6 +49,7 @@ public partial class Main : Node2D
 
         _sfx = new Sfx();
         AddChild(_sfx);
+        AddChild(new EnemySprites());
 
         _ui = new Ui(this) { Layer = 10 };
         AddChild(_ui);
@@ -415,10 +416,8 @@ public partial class Main : Node2D
                     _enemyViews.Add(ev);
                 }
                 var v = _enemyViews[used++];
-                v.Enemy = e;
-                v.Position = e.Pos;
+                v.Sync(e, G.T, G.P.Pos.X < e.Pos.X);
                 v.Visible = true;
-                v.QueueRedraw();
             }
         }
         for (int i = used; i < _enemyViews.Count; i++) if (_enemyViews[i].Visible) { _enemyViews[i].Visible = false; _enemyViews[i].Enemy = null; }
@@ -555,15 +554,24 @@ public partial class Baked : Node2D
     }
 }
 
-public partial class EnemyView : Node2D
+/// <summary>Враг на экране: спрайт из заранее нарисованных кадров (EnemySprites).</summary>
+public partial class EnemyView : Sprite2D
 {
     readonly Main _main;
     public Enemy Enemy;
-    public EnemyView(Main main) { _main = main; }
-    public override void _Draw()
+    string _sheetId;
+    public EnemyView(Main main) { _main = main; Centered = false; RegionEnabled = true; }
+
+    public void Sync(Enemy e, float t, bool faceLeft)
     {
-        if (Enemy == null || _main.G == null) return;
-        Painter.Enemy(this, Enemy, _main.G.T, _main.G.P.Pos.X < Enemy.Pos.X, Vector2.Zero);
+        Enemy = e;
+        var sh = EnemySprites.Sheets[e.Def.Id];
+        if (_sheetId != e.Def.Id) { _sheetId = e.Def.Id; Texture = sh.Texture; Offset = -sh.Origin; }
+        int f = EnemySprites.FrameOf(e, t);
+        RegionRect = new Rect2(f * sh.Cell.X, 0, sh.Cell.X, sh.Cell.Y);
+        FlipH = faceLeft;
+        Position = e.Pos;
+        Modulate = e.HitFlash > 0 ? new Color(2.2f, 2.2f, 2.2f) : e.Slow > 0 ? new Color(0.75f, 0.9f, 1.3f) : Colors.White;
     }
 }
 
@@ -826,7 +834,8 @@ public partial class Overlay : Node2D
             float w = font.GetStringSize(t.Text, HorizontalAlignment.Left, -1, size).X;
             var pos = t.Pos - new Vector2(w / 2, 0);
             var col = new Color(t.C, Mathf.Clamp(t.T * 2, 0, 1));
-            DrawStringOutline(font, pos, t.Text, HorizontalAlignment.Left, -1, size, 4, new Color(0, 0, 0, col.A));
+            if (Settings.HighFx) DrawStringOutline(font, pos, t.Text, HorizontalAlignment.Left, -1, size, 4, new Color(0, 0, 0, col.A));
+            else DrawString(font, pos + new Vector2(1.5f, 1.5f), t.Text, HorizontalAlignment.Left, -1, size, new Color(0, 0, 0, col.A));
             DrawString(font, pos, t.Text, HorizontalAlignment.Left, -1, size, col);
         }
     }

@@ -49,7 +49,9 @@ public partial class Autotest : Node
                 foreach (var d in dirs) Input.ActionRelease(d);
                 Input.ActionPress(dirs[k]);
                 if (_main.State is GameState.LevelUp or GameState.PageChoice) { Shot("2-levelup"); _main.ApplyChoice(0); }
-                if (_t > 9) { foreach (var d in dirs) Input.ActionRelease(d); Shot("3-play"); _step++; }
+                if (_t > 6 && g.Enemies.Count < 150)
+                    for (int i = 0; i < 200; i++) g.SpawnEnemy(i % 3 == 0 ? "bat" : "imp", g.P.Pos + Vector2.FromAngle(i * 0.7f) * (120 + i % 9 * 25));
+                if (_t > 9) { foreach (var d in dirs) Input.ActionRelease(d); Note($"crowd enemies={g.Enemies.Count} fps={Engine.GetFramesPerSecond()}"); Shot("3-play"); _step++; }
                 break;
             case 2:
                 g.P.Hp = g.P.MaxHp = 9999;

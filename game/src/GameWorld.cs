@@ -518,7 +518,7 @@ public sealed class GameWorld
         if (Particles.Count > maxParticles) Particles.RemoveRange(0, Particles.Count - maxParticles);
         foreach (var t in Texts) { t.Pos.Y -= 40 * dt; t.T -= dt; }
         Texts.RemoveAll(t => t.T <= 0);
-        if (Texts.Count > 120) Texts.RemoveRange(0, Texts.Count - 120);
+        if (Texts.Count > 40) Texts.RemoveRange(0, Texts.Count - 40);
         foreach (var b in Bolts) b.T -= dt;
         Bolts.RemoveAll(b => b.T <= 0);
         foreach (var r in Rings) { r.T -= dt; r.R += (r.MaxR - r.R) * Mathf.Min(1, dt * 18); }
