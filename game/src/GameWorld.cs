@@ -514,7 +514,8 @@ public sealed class GameWorld
         // Эффекты
         foreach (var q in Particles) { q.Pos += q.Vel * dt; q.Vel *= 0.92f; q.T -= dt; }
         Particles.RemoveAll(q => q.T <= 0);
-        if (Particles.Count > 900) Particles.RemoveRange(0, Particles.Count - 900);
+        int maxParticles = Settings.HighFx ? 900 : 250;
+        if (Particles.Count > maxParticles) Particles.RemoveRange(0, Particles.Count - maxParticles);
         foreach (var t in Texts) { t.Pos.Y -= 40 * dt; t.T -= dt; }
         Texts.RemoveAll(t => t.T <= 0);
         if (Texts.Count > 120) Texts.RemoveRange(0, Texts.Count - 120);

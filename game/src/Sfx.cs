@@ -33,9 +33,16 @@ public partial class Sfx : Node
         Add("bossShot", 110, 0.3f, Wave.Square, 0.4f, -50);
         Add("pick", 660, 0.15f, Wave.Triangle, 0.5f, 300);
         Add("win", 523, 0.6f, Wave.Triangle, 0.6f, 500);
+        if (AudioServer.GetBusIndex("SFX") < 0)
+        {
+            AudioServer.AddBus();
+            AudioServer.SetBusName(AudioServer.BusCount - 1, "SFX");
+            AudioServer.SetBusSend(AudioServer.BusCount - 1, "Master");
+        }
+        Settings.ApplyAudio();
         for (int i = 0; i < 12; i++)
         {
-            var p = new AudioStreamPlayer { VolumeDb = -14 };
+            var p = new AudioStreamPlayer { VolumeDb = -14, Bus = "SFX" };
             AddChild(p);
             _players.Add(p);
         }

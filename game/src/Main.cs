@@ -14,6 +14,8 @@ public partial class Main : Node2D
     public float BestWin;
     public float UiTime;
     public bool UsingGamepad;
+    /// <summary>Какие подсказки показывать: по выбору в настройках или по последнему устройству ввода.</summary>
+    public bool ShowPadPrompts => Settings.Device == InputDevice.PlayStation || (Settings.Device == InputDevice.Auto && UsingGamepad);
 
     Camera2D _camera;
     Sfx _sfx;
@@ -29,6 +31,8 @@ public partial class Main : Node2D
     {
         SetupInput();
         LoadBest();
+        Settings.Load();
+        Settings.ApplyWindow();
         RenderingServer.SetDefaultClearColor(new Color("#07060b"));
 
         _camera = new Camera2D();
@@ -158,6 +162,9 @@ public partial class Main : Node2D
         }
     }
 
+    public void PlayTestSound() => _sfx.Play("pick");
+    public void OpenSettings() => _ui.ShowSettings(_ui.ShowTitle);
+
     static void Rumble(float weak, float strong, float dur)
     {
         foreach (var id in Input.GetConnectedJoypads()) Input.StartJoyVibration(id, weak, strong, dur);
@@ -234,8 +241,9 @@ public partial class Main : Node2D
 
         if (Input.IsActionJustPressed("fullscreen"))
         {
-            bool fs = DisplayServer.WindowGetMode() == DisplayServer.WindowMode.Fullscreen;
-            DisplayServer.WindowSetMode(fs ? DisplayServer.WindowMode.Windowed : DisplayServer.WindowMode.Fullscreen);
+            Settings.Fullscreen = DisplayServer.WindowGetMode() != DisplayServer.WindowMode.Fullscreen;
+            Settings.ApplyWindow();
+            Settings.Save();
         }
 
         switch (State)
@@ -595,11 +603,12 @@ public partial class Glow : Node2D
     public override void _Draw()
     {
         var g = _main.G;
+        bool hi = Settings.HighFx;
         if (g == null)
         {
             // светлячки на титульном экране
             var cam = _main.CameraCenter;
-            for (int i = 0; i < 40; i++)
+            for (int i = 0; i < (hi ? 40 : 12); i++)
             {
                 float t = _main.UiTime * 0.3f + i * 1.7f;
                 var p = cam + new Vector2(Mathf.Sin(t * 0.7f + i) * 600, Mathf.Cos(t * 0.5f + i * 2.1f) * 380);
@@ -613,15 +622,14 @@ public partial class Glow : Node2D
 
         // аура и навершие посоха
         var aura = P.Look.Aura;
-        if (aura.HasValue) Soft(P.Pos - new Vector2(0, 50), 110, new Color(aura.Value, 0.35f));
+        if (aura.HasValue && hi) Soft(P.Pos - new Vector2(0, 50), 110, new Color(aura.Value, 0.35f));
         var tip = Painter.StaffTip(P.Pos, Data.WitchScale, P.Face < 0, P.Anim);
         var gem = P.Look.DressLight ?? new Color("#b388ff");
-        Soft(tip, 26, new Color(gem, 0.8f));
-        Soft(tip, 7, new Color(1, 1, 1, 0.9f));
+        Soft(tip, hi ? 26 : 14, new Color(gem, 0.8f));
         // магический круг под ногами
         DrawSetTransform(P.Pos, 0, new Vector2(1, 0.42f));
         DrawArc(Vector2.Zero, 48, 0, Mathf.Tau, 48, new Color(gem, 0.35f), 2.5f);
-        DrawArc(Vector2.Zero, 38, g.T, g.T + Mathf.Tau * 0.7f, 32, new Color(gem, 0.25f), 1.5f);
+        if (hi) DrawArc(Vector2.Zero, 38, g.T, g.T + Mathf.Tau * 0.7f, 32, new Color(gem, 0.25f), 1.5f);
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
 
         foreach (var r in g.Rings)
@@ -629,7 +637,7 @@ public partial class Glow : Node2D
             var c = new Color(r.C, Mathf.Clamp(r.T * 3, 0, 1));
             DrawSetTransform(r.Pos, 0, new Vector2(1, 0.55f));
             DrawArc(Vector2.Zero, r.R, 0, Mathf.Tau, 64, c, 8);
-            DrawArc(Vector2.Zero, r.R * 0.85f, 0, Mathf.Tau, 64, new Color(c, c.A * 0.4f), 4);
+            if (hi) DrawArc(Vector2.Zero, r.R * 0.85f, 0, Mathf.Tau, 64, new Color(c, c.A * 0.4f), 4);
             DrawSetTransform(Vector2.Zero, 0, Vector2.One);
         }
 
@@ -642,7 +650,7 @@ public partial class Glow : Node2D
             {
                 float a = g.FrostAngle + i * Mathf.Tau / n;
                 var c = P.Pos + new Vector2(0, -45) + Vector2.FromAngle(a) * R;
-                Soft(c, 26, new Color(0.5f, 0.8f, 1f, 0.6f));
+                if (hi) Soft(c, 26, new Color(0.5f, 0.8f, 1f, 0.6f));
                 var d = Vector2.FromAngle(a + Mathf.Pi / 2);
                 var nrm = new Vector2(-d.Y, d.X);
                 DrawColoredPolygon(new[] { c + d * 12, c + nrm * 4, c - d * 12, c - nrm * 4 }, new Color(0.8f, 0.95f, 1f, 0.95f));
@@ -653,21 +661,21 @@ public partial class Glow : Node2D
         {
             if (b.Kind == "fireball")
             {
-                Soft(b.Pos, 46, new Color(1f, 0.45f, 0.15f, 0.8f));
-                Soft(b.Pos, 14, new Color(1f, 0.9f, 0.6f, 1f));
+                if (hi) Soft(b.Pos, 46, new Color(1f, 0.45f, 0.15f, 0.8f));
+                Soft(b.Pos, hi ? 14 : 18, new Color(1f, 0.9f, 0.6f, 1f));
             }
             else
             {
                 var tail = b.Pos - b.Vel.Normalized() * 26;
                 DrawLine(tail, b.Pos, new Color(0.7f, 0.45f, 1f, 0.6f), 6);
-                Soft(b.Pos, 26, new Color(0.75f, 0.45f, 1f, 0.85f));
-                Soft(b.Pos, 7, new Color(1, 1, 1, 1));
+                if (hi) Soft(b.Pos, 26, new Color(0.75f, 0.45f, 1f, 0.85f));
+                Soft(b.Pos, hi ? 7 : 10, new Color(0.95f, 0.85f, 1, 1));
             }
         }
         foreach (var b in g.FoeBullets)
         {
-            Soft(b.Pos, b.R * 3, new Color(1f, 0.15f, 0.25f, 0.75f));
-            Soft(b.Pos, b.R, new Color(1f, 0.8f, 0.8f, 1f));
+            if (hi) Soft(b.Pos, b.R * 3, new Color(1f, 0.15f, 0.25f, 0.75f));
+            Soft(b.Pos, b.R * (hi ? 1 : 1.5f), new Color(1f, 0.55f, 0.6f, 1f));
         }
         foreach (var bl in g.Bolts)
         {
@@ -680,14 +688,16 @@ public partial class Glow : Node2D
                 pts.Add(bl.Pts[i]);
             }
             float a = Mathf.Clamp(bl.T * 8, 0, 1);
-            DrawPolyline(pts.ToArray(), new Color(1f, 0.85f, 0.3f, a * 0.5f), 10);
+            if (hi) DrawPolyline(pts.ToArray(), new Color(1f, 0.85f, 0.3f, a * 0.5f), 10);
             DrawPolyline(pts.ToArray(), new Color(1f, 1f, 0.85f, a), 3);
         }
-        foreach (var q in g.Particles)
-            Soft(q.Pos, q.S * 1.6f, new Color(q.C, Mathf.Clamp(q.T * 3, 0, 1) * 0.9f));
-
-        foreach (var gm in g.Gems) Soft(gm.Pos, 16, gm.V >= 3 ? new Color(1f, 0.5f, 0.7f, 0.5f) : new Color(0.4f, 0.9f, 1f, 0.5f));
-        foreach (var f in g.Flowers) Soft(f.Pos - new Vector2(0, 14), 34, new Color(f.Kind.Color, 0.35f));
+        if (hi)
+        {
+            foreach (var q in g.Particles)
+                Soft(q.Pos, q.S * 1.6f, new Color(q.C, Mathf.Clamp(q.T * 3, 0, 1) * 0.9f));
+            foreach (var gm in g.Gems) Soft(gm.Pos, 16, gm.V >= 3 ? new Color(1f, 0.5f, 0.7f, 0.5f) : new Color(0.4f, 0.9f, 1f, 0.5f));
+            foreach (var f in g.Flowers) Soft(f.Pos - new Vector2(0, 14), 34, new Color(f.Kind.Color, 0.35f));
+        }
         foreach (var pg in g.Pages) Soft(pg.Pos - new Vector2(0, 18), 60, new Color(1f, 0.85f, 0.5f, 0.55f));
 
         // глаза врагов
@@ -698,9 +708,10 @@ public partial class Glow : Node2D
             float r = e.IsBoss ? 7 : e.IsElite ? 5 : 3.2f;
             foreach (var eye in Painter.EnemyEyes(e, g.T, faceLeft))
             {
-                Soft(eye, r * 3.2f, new Color(col, 0.7f));
-                Soft(eye, r, new Color(1, 1, 0.9f, 1));
+                if (hi) Soft(eye, r * 3.2f, new Color(col, 0.7f));
+                Soft(eye, r * (hi ? 1 : 1.6f), hi ? new Color(1, 1, 0.9f, 1) : col);
             }
+            if (!hi) continue;
             if (e.IsElite) Soft(e.Pos - new Vector2(0, Painter.BodyHeight(e)), 70, new Color(1f, 0.75f, 0.2f, 0.18f));
             if (e.IsBoss)
             {
@@ -727,6 +738,9 @@ public partial class Overlay : Node2D
         var g = _main.G;
         if (g == null) return;
 
+        if (!Settings.HighFx)
+            foreach (var q in g.Particles)
+                DrawRect(new Rect2(q.Pos - Vector2.One * q.S / 2, Vector2.One * q.S), new Color(q.C, Mathf.Clamp(q.T * 3, 0, 1)));
         foreach (var gm in g.Gems)
         {
             var p = gm.Pos;

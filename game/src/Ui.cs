@@ -19,9 +19,6 @@ public partial class Ui : CanvasLayer
 
     public override void _Ready()
     {
-        var vignette = new Vignette { MouseFilter = Control.MouseFilterEnum.Ignore };
-        AddChild(vignette);
-        vignette.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         _hud = new Hud(_main, this) { MouseFilter = Control.MouseFilterEnum.Ignore };
         AddChild(_hud);
         _hud.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
@@ -164,12 +161,10 @@ public partial class Ui : CanvasLayer
         v.AddChild(story);
         v.AddChild(new Control { CustomMinimumSize = new Vector2(0, 10) });
         v.AddChild(LeftAligned(MakeButton("Начать забег", Gold, new Vector2(300, 60), () => _main.StartRun(), 22)));
+        v.AddChild(LeftAligned(MakeButton("Настройки", new Color("#c9b6ff"), new Vector2(300, 48), () => ShowSettings(ShowTitle))));
         v.AddChild(LeftAligned(MakeButton("Выйти", new Color("#9a8fb5"), new Vector2(300, 48), () => _main.GetTree().Quit())));
-        v.AddChild(new Control { CustomMinimumSize = new Vector2(0, 10) });
-        var keys = MakeLabel("Клавиатура: WASD — бег · ЛКМ — стрельба в курсор · Пробел — рывок · Esc — пауза\n" +
-            "DualSense: левый стик — бег · правый стик — прицел · ✕ или R1 — рывок · Options — пауза", 14, new Color("#a99fc4"));
-        keys.HorizontalAlignment = HorizontalAlignment.Left;
-        v.AddChild(keys);
+        v.AddChild(new Control { CustomMinimumSize = new Vector2(0, 6) });
+        v.AddChild(new PromptsPanel(_main, false) { CustomMinimumSize = new Vector2(460, 150) });
         if (_main.BestWin > 0)
         {
             var best = MakeLabel("Лучшее время победы: " + Fmt(_main.BestWin), 14, new Color("#a99fc4"));
@@ -200,6 +195,7 @@ public partial class Ui : CanvasLayer
             row.AddChild(MakeButton($"{c.Title}\n\n{c.Desc}\n\n[{i + 1}]", c.Color, new Vector2(250, 180), () => _main.ApplyChoice(idx), 17));
         }
         v.AddChild(row);
+        v.AddChild(Centered(new PromptsPanel(_main, true) { CustomMinimumSize = new Vector2(420, 40) }));
         if (isPage) v.AddChild(new WitchPreview(_main, 1.8f, new Vector2(170, 170)));
     }
 
@@ -208,8 +204,62 @@ public partial class Ui : CanvasLayer
         var v = NewModal(0.7f);
         v.AddChild(MakeLabel("Пауза", 44, Gold));
         v.AddChild(Centered(MakeButton("Продолжить", Gold, new Vector2(260, 56), () => _main.SetPaused(false))));
+        v.AddChild(Centered(MakeButton("Настройки", new Color("#c9b6ff"), new Vector2(260, 56), () => ShowSettings(ShowPause))));
         v.AddChild(Centered(MakeButton("В главное меню", new Color("#bbbbbb"), new Vector2(260, 56), () => _main.ToTitle())));
         v.AddChild(Centered(MakeButton("Выйти из игры", new Color("#e57373"), new Vector2(260, 56), () => _main.GetTree().Quit())));
+    }
+
+    // ---------- Настройки ----------
+    public void ShowSettings(System.Action back)
+    {
+        _hud.Visible = false;
+        var v = NewModal(0.86f);
+        v.AddChild(MakeLabel("Настройки", 44, Gold));
+        var grid = new GridContainer { Columns = 2 };
+        grid.AddThemeConstantOverride("h_separation", 24);
+        grid.AddThemeConstantOverride("v_separation", 14);
+        v.AddChild(Centered(grid));
+
+        Label Cap(string t) { var l = MakeLabel(t, 18, new Color("#ddd6ee")); l.HorizontalAlignment = HorizontalAlignment.Right; l.CustomMinimumSize = new Vector2(240, 0); return l; }
+
+        var device = new OptionButton { CustomMinimumSize = new Vector2(320, 40), FocusMode = Control.FocusModeEnum.All };
+        device.AddItem("Авто (по последнему вводу)");
+        device.AddItem("Клавиатура и мышь");
+        device.AddItem("Геймпад PlayStation (DualSense)");
+        device.Selected = (int)Settings.Device;
+        device.ItemSelected += i => { Settings.Device = (InputDevice)(int)i; Settings.Save(); };
+        grid.AddChild(Cap("Управление / подсказки"));
+        grid.AddChild(device);
+
+        HSlider Slider(float value, System.Action<float> set)
+        {
+            var sl = new HSlider { MinValue = 0, MaxValue = 100, Step = 5, Value = value * 100, CustomMinimumSize = new Vector2(320, 32), FocusMode = Control.FocusModeEnum.All };
+            sl.ValueChanged += x => { set((float)x / 100f); Settings.ApplyAudio(); Settings.Save(); };
+            return sl;
+        }
+        grid.AddChild(Cap("Общая громкость"));
+        grid.AddChild(Slider(Settings.Master, x => Settings.Master = x));
+        grid.AddChild(Cap("Звуки эффектов"));
+        var fx = Slider(Settings.Effects, x => Settings.Effects = x);
+        fx.DragEnded += _ => GetParent<Main>()?.PlayTestSound();
+        grid.AddChild(fx);
+
+        CheckButton Toggle(bool on, string text, System.Action<bool> set)
+        {
+            var c = new CheckButton { Text = text, ButtonPressed = on, FocusMode = Control.FocusModeEnum.All };
+            c.AddThemeFontSizeOverride("font_size", 17);
+            c.Toggled += x => { set(x); Settings.Save(); };
+            return c;
+        }
+        grid.AddChild(Cap("Звук"));
+        grid.AddChild(Toggle(!Settings.Muted, "Включён", x => { Settings.Muted = !x; Settings.ApplyAudio(); }));
+        grid.AddChild(Cap("Красивые эффекты"));
+        grid.AddChild(Toggle(Settings.HighFx, "Свечение и частицы (тяжелее)", x => Settings.HighFx = x));
+        grid.AddChild(Cap("Полный экран"));
+        grid.AddChild(Toggle(Settings.Fullscreen, "F11", x => { Settings.Fullscreen = x; Settings.ApplyWindow(); }));
+
+        v.AddChild(new Control { CustomMinimumSize = new Vector2(0, 8) });
+        v.AddChild(Centered(MakeButton("Назад", Gold, new Vector2(260, 54), () => back())));
     }
 
     public void ShowEnd(bool win)
@@ -268,28 +318,6 @@ public partial class WitchPreview : Control
     }
 }
 
-/// <summary>Тёмный туман по краям экрана (радиальный градиент).</summary>
-public partial class Vignette : TextureRect
-{
-    public Vignette()
-    {
-        var grad = new Gradient();
-        grad.SetColor(0, new Color(0.02f, 0.04f, 0.03f, 0f));
-        grad.SetColor(1, new Color(0.02f, 0.04f, 0.03f, 0.8f));
-        grad.SetOffset(0, 0.45f);
-        grad.SetOffset(1, 1.0f);
-        Texture = new GradientTexture2D
-        {
-            Gradient = grad, Width = 256, Height = 256,
-            Fill = GradientTexture2D.FillEnum.Radial,
-            FillFrom = new Vector2(0.5f, 0.5f), FillTo = new Vector2(1.05f, 1.05f),
-        };
-        ExpandMode = ExpandModeEnum.IgnoreSize;
-        StretchMode = StretchModeEnum.Scale;
-        TextureFilter = TextureFilterEnum.Linear;
-    }
-}
-
 /// <summary>Полоски здоровья/опыта, таймер, заклинания, букет, полоса босса, баннеры и стрелки к целям.</summary>
 public partial class Hud : Control
 {
@@ -342,7 +370,7 @@ public partial class Hud : Control
             Text($"{s.Name} {lv}", new Vector2(38, y), 14, new Color("#eeeeee"));
             y += 21;
         }
-        Text(p.DashCd > 0 ? $"Рывок: {p.DashCd:0.0}" : "Рывок готов [Пробел]", new Vector2(18, y + 4), 14, p.DashCd > 0 ? new Color("#888888") : new Color("#cceeee"));
+        Text(p.DashCd > 0 ? $"Рывок: {p.DashCd:0.0}" : "Рывок готов", new Vector2(18, y + 4), 14, p.DashCd > 0 ? new Color("#888888") : new Color("#cceeee"));
 
         if (p.Bouquet.Count > 0)
         {
@@ -371,6 +399,9 @@ public partial class Hud : Control
             Text(b.sub, new Vector2(W / 2, H * 0.22f + 32), 18, new Color(1, 1, 1, b.alpha), HorizontalAlignment.Center);
         }
 
+        // Подсказки управления в правом нижнем углу
+        Prompts.DrawGameplay(this, new Vector2(W - 16, H - 16), _main.ShowPadPrompts, true);
+
         // Стрелки к страницам, хранителям и боссу за пределами экрана
         var cam = _main.CameraCenter;
         var targets = g.Pages.Select(pg => (pg.Pos, new Color("#f8e7a1")))
@@ -385,5 +416,74 @@ public partial class Hud : Control
             DrawColoredPolygon(pts, col);
             DrawPolyline(pts.Append(pts[0]).ToArray(), new Color("#3f2631"), 2);
         }
+    }
+}
+
+/// <summary>Подсказки управления: иконки клавиш или кнопок DualSense в зависимости от настройки.</summary>
+public static class Prompts
+{
+    static readonly (InputIcons.Id[] keys, string text)[] Keyboard =
+    {
+        (new[] { InputIcons.Id.W, InputIcons.Id.A, InputIcons.Id.S, InputIcons.Id.D }, "Бег"),
+        (new[] { InputIcons.Id.MouseLeft }, "Стрельба в курсор"),
+        (new[] { InputIcons.Id.Space }, "Рывок"),
+        (new[] { InputIcons.Id.Esc }, "Пауза"),
+    };
+    static readonly (InputIcons.Id[] keys, string text)[] Pad =
+    {
+        (new[] { InputIcons.Id.StickL, InputIcons.Id.Dpad }, "Бег"),
+        (new[] { InputIcons.Id.StickR }, "Прицел"),
+        (new[] { InputIcons.Id.Cross, InputIcons.Id.R1 }, "Рывок"),
+        (new[] { InputIcons.Id.Options }, "Пауза"),
+    };
+
+    /// <summary>Рисует столбец подсказок. anchor — правый нижний угол (rightAlign) или левый верхний.</summary>
+    public static void DrawGameplay(CanvasItem ci, Vector2 anchor, bool pad, bool rightAlign, float scale = 2)
+    {
+        var rows = pad ? Pad : Keyboard;
+        var font = ThemeDB.FallbackFont;
+        float rowH = 16 * scale + 6;
+        for (int i = 0; i < rows.Length; i++)
+        {
+            var (keys, text) = rows[i];
+            float y = rightAlign ? anchor.Y - (rows.Length - i) * rowH : anchor.Y + i * rowH;
+            float textW = font.GetStringSize(text, HorizontalAlignment.Left, -1, 15).X;
+            float iconsW = keys.Length * (16 * scale + 3);
+            float x = rightAlign ? anchor.X - textW - 10 - iconsW : anchor.X;
+            foreach (var k in keys) x += InputIcons.Draw(ci, k, new Vector2(x, y), scale) + 3;
+            var tp = new Vector2(x + 7, y + 16 * scale * 0.5f + 6);
+            ci.DrawStringOutline(font, tp, text, HorizontalAlignment.Left, -1, 15, 4, new Color(0, 0, 0, 0.8f));
+            ci.DrawString(font, tp, text, HorizontalAlignment.Left, -1, 15, new Color("#e8e0ff"));
+        }
+    }
+
+    public static void DrawChoose(CanvasItem ci, Vector2 pos, bool pad, float scale = 2)
+    {
+        var font = ThemeDB.FallbackFont;
+        float x = pos.X;
+        var keys = pad ? new[] { InputIcons.Id.Dpad, InputIcons.Id.Cross } : new[] { InputIcons.Id.Key1, InputIcons.Id.Key2, InputIcons.Id.Key3, InputIcons.Id.MouseLeft };
+        foreach (var k in keys) x += InputIcons.Draw(ci, k, new Vector2(x, pos.Y), scale) + 3;
+        var tp = new Vector2(x + 7, pos.Y + 16 * scale * 0.5f + 6);
+        ci.DrawString(font, tp, "Выбрать", HorizontalAlignment.Left, -1, 15, new Color("#e8e0ff"));
+    }
+}
+
+/// <summary>Блок подсказок в меню. Перерисовывается только при смене устройства.</summary>
+public partial class PromptsPanel : Control
+{
+    readonly Main _main;
+    readonly bool _choose;
+    bool _lastPad;
+    public PromptsPanel(Main main, bool choose) { _main = main; _choose = choose; MouseFilter = MouseFilterEnum.Ignore; _lastPad = main.ShowPadPrompts; }
+
+    public override void _Process(double delta)
+    {
+        if (_main.ShowPadPrompts != _lastPad) { _lastPad = _main.ShowPadPrompts; QueueRedraw(); }
+    }
+
+    public override void _Draw()
+    {
+        if (_choose) Prompts.DrawChoose(this, new Vector2(Size.X / 2 - 110, 0), _lastPad);
+        else Prompts.DrawGameplay(this, Vector2.Zero, _lastPad, false);
     }
 }

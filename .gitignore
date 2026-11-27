@@ -9,3 +9,7 @@ obj/
 build/
 autotest/
 .DS_Store
+
+# Купленный пак иконок управления (Vryell) — распространять нельзя
+game/assets/input_icons.png
+game/assets/input_icons.png.import

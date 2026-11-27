@@ -40,7 +40,8 @@ public partial class Autotest : Node
         var g = _main.G;
         switch (_step)
         {
-            case 0 when _t > 1.0f: Shot("1-title"); _main.StartRun(); _step++; break;
+            case 0 when _t > 1.0f: Shot("1-title"); _main.OpenSettings(); _step = 10; break;
+            case 10 when _t > 1.8f: Shot("0-settings"); _main.StartRun(); _step = 1; break;
             case 1:
                 // бег по кругу
                 string[] dirs = { "move_right", "move_down", "move_left", "move_up" };
